@@ -6,48 +6,54 @@
 
 Phase 1 是 Lorebook Library / File Manager，不是 Entry Editor。优先解决 Folder、Tag、Smart View、批量整理与安全 Trash。
 
-## 模块边界
-
-当前基础层固定为 8 个代码模块：
+## 当前模块
 
 ```text
 src/worldbook_manager/
   index.ts                  # 脚本生命周期与 Script Button；不写业务逻辑
   model.ts                  # Manager 自己拥有的数据契约与 Zod 校验
   data/
-    tavern.ts               # Tavern Helper API adapter；只负责读取/写入 Tavern 数据
-    metadata.ts             # Script Variables persistence；不懂 Folder/Trash 业务
+    tavern.ts               # Tavern Helper API adapter
+    metadata.ts             # Script Variables persistence
   domain/
-    reconcile.ts            # 纯函数：baseline 后的新书/缺失书/prefix 自动归档
-    views.ts                # 纯函数：Summary、Folder/Smart View/Tag/Search/Sort
+    reconcile.ts            # baseline / 新书 / 缺失书 / prefix 自动归档
+    views.ts                # Summary、Smart View、Tag/Search/Sort 纯函数
+    organize.ts             # Folder / Tag / 单本整理纯函数
   infra/
-    keyed-queue.ts          # 极小的 keyed serialization primitive
+    keyed-queue.ts          # 无业务含义的 keyed serialization primitive
   services/
-    manager.ts              # application coordinator；唯一允许跨 data/domain 编排的层
+    state.ts                # Manager metadata 唯一 mutation queue + sync
+    manager.ts              # 首屏 bootstrap / runtime binding snapshot
+    organize.ts             # Folder / Tag application service
+  ui/
+    manager.ts              # UI 生命周期、事件委派、调用 service
+    view.ts                 # DOM rendering；只消费 normalized state/summary
+    styles.ts               # 单套 responsive 样式
 ```
 
-UI 到来后放在 `ui/`，但只有真的出现独立职责时才拆文件。不要为了“以后可能用”预先建立空模块。
+只有出现真实独立职责才拆文件。禁止建立只转发一次调用、没有自己边界的“占位模块”。
 
 ## 单向依赖
 
 ```text
-index / ui
-    ↓
-services
-   ↙ ↘
-data  domain
-   ↘ ↙
-  model
+index
+ ├─→ ui/manager ─→ services
+ │              └→ ui/view ─→ domain/views
+ └─→ services/state
 
-infra 只提供无业务含义的小工具。
+services ─→ data + domain ─→ model
+infra 只提供无业务含义的小工具
 ```
 
-禁止反向依赖。尤其禁止：
+`ui/view` 可以调用纯 selector/filter，但 UI 不得直接读写 Tavern 或 Script Variables。
 
-- `data/` import `ui/` 或决定 Folder / Tag / Trash 规则。
+尤其禁止：
+
+- `data/` import `ui/` 或决定 Folder / Tag / Trash 业务。
 - `domain/` 调 Tavern Helper、DOM、localStorage、Script Variables。
 - `ui/` 直接调用 `getWorldbook*`、`rebind*`、`deleteWorldbook` 或 Script Variables。
 - 在 `model.ts` 塞业务流程。
+- 在多个 service 各自建立 metadata mutation queue；Manager state 只能走 `services/state.ts`。
 
 ## Source of Truth
 
@@ -56,19 +62,19 @@ infra 只提供无业务含义的小工具。
 - Folder / Tag / Prefix Rule / Trash metadata：Script Variables 中的 `worldbook_manager_state`。
 - Cache 永远可以删除重建，不能反过来覆盖真实绑定。
 
-不要把 Manager metadata 写进 Lorebook Entry、`extra`、隐藏 Entry 或 Lorebook 名称。localStorage 只可用于未来的非关键 UI cache。
+不要把 Manager metadata 写进 Lorebook Entry、`extra`、隐藏 Entry 或 Lorebook 名称。localStorage 只可用于非关键 UI cache。
 
 ## API 策略
 
 只使用模板 `@types` 当前推荐的 API；不为 deprecated `LorebookEntry` / `getLorebooks` 建兼容层。
 
-Adapter 只包装真正被当前里程碑使用的 API。新功能需要新 API 时再加入，避免出现“万能 api.ts”。Tavern Helper 的原始返回结构只能在 `data/` 出现，上层使用 Manager 自己的 normalized type。
+Adapter 只包装真正被当前里程碑使用的 API。Tavern Helper 的原始返回结构只能在 `data/` 出现，上层使用 Manager 自己的 normalized type。
 
-Chat history 目前的类型仍是 `any`，因此 Chat binding mapping 必须留在 adapter 边界内，并且在真实环境验证前不能成为核心功能的阻塞条件。
+Chat history 的类型仍不稳定，因此 Chat binding mapping 必须留在 adapter 边界内，并且在真实环境验证前不能成为核心功能的阻塞条件。
 
 ## 写操作规则
 
-所有跨 Tavern + Manager metadata 的高风险操作必须遵循：
+Manager metadata 的所有 mutation 必须经过同一个 `KeyedQueue`。Folder / Tag 这类安全操作只写 metadata；跨 Tavern + Manager metadata 的高风险操作必须遵循：
 
 ```text
 读取真实状态
@@ -78,22 +84,31 @@ Chat history 目前的类型仍是 `any`，因此 Chat binding mapping 必须留
 → 最后提交 Manager metadata
 ```
 
-同一资源的 mutation 使用 `KeyedQueue` 串行化。不要在 UI 层 optimistic 地假装成功。
+UI 不能 optimistic 地假装成功。Batch 操作必须返回逐项成功/失败结果；一个失败不能抹掉其他成功项。
 
-Batch 操作必须返回逐项成功/失败结果；一个失败不能抹掉其他成功项，也不能静默吞掉。
+## UI 规则
+
+单套 full-screen responsive UI：
+
+- Desktop：固定 Sidebar + compact list。
+- Mobile：同一 DOM，Sidebar 变 Drawer，详情变 Bottom Sheet。
+- 单行世界书使用事件委派，不为每一行建立独立永久 listener。
+- 不依赖 hover、右键、drag-only 操作；核心触控目标约 44px。
+- 用户输入/世界书名称渲染到 HTML 前必须 escape。
+- 关闭或热重载时清理 Manager root 与 document listener。
 
 ## 性能预算
 
 首屏只允许读取 Lorebook 名称与轻量 metadata / binding。禁止为了显示列表逐本 `getWorldbook()`。
 
-Entry count、Chat mapping 等昂贵信息以后采用 lazy load + cache；搜索只能过滤内存中的 summary，不得每输入一个字符触发 Tavern 请求。
+Folder / Tag 修改后复用已读取的 runtime binding snapshot，不重新扫描全部角色；只有手动刷新才重读 Character / Global binding。
+
+Entry count、Chat mapping 等昂贵信息以后采用 lazy load + cache；搜索只过滤内存 summary，不得每输入一个字符触发 Tavern 请求。
 
 ## 开发顺序
 
-1. **Foundation（当前）**：API adapter、metadata schema/persistence、baseline/reconcile、summary/view pure functions、mutation queue、Script Button。
-2. **Folder / Tag**：创建、改名、删除、排序、批量移动与批量 Tag；先纯 domain，再 service，再 UI。
-3. **Responsive Manager UI**：单套 full-screen responsive UI，desktop sidebar + mobile drawer/bottom sheet，compact list + event delegation。
-4. **Bindings / Trash**：高风险写操作按 read → change → verify → metadata 流程实现；Soft Trash 优先。
-5. **Lazy enhancements**：Entry count、Chat mapping、cache refresh；不能拖慢 Manager 首屏。
-
-每个里程碑完成后再拆下一层模块。若一个文件只是转发另一个函数，没有形成独立边界，就不要创建它。
+1. **Foundation（完成）**：API adapter、metadata schema/persistence、baseline/reconcile、summary/view、mutation queue。
+2. **Folder / Tag + Manager Shell（当前）**：安全 metadata CRUD、responsive UI、Folder/Smart View、Tag filter、Search、单本 Move/Tag。
+3. **Batch organize**：多选、批量 Move / Add Tag / Remove Tag。
+4. **Bindings / Trash**：按 read → change → verify → metadata 实现；Soft Trash 优先。
+5. **Lazy enhancements**：Entry count、Chat mapping、cache refresh。
