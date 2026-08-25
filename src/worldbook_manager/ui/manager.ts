@@ -4,15 +4,16 @@ import { createFolder, createTag, updateLorebookOrganization } from '../services
 import { bootstrapManager, type ManagerBootstrapResult } from '../services/manager';
 import {
   createManagerRoot,
-  ensureManagerStyles,
   readSheetOrganization,
   renderManager,
   renderManagerList,
   renderManagerSheet,
   type ManagerUiModel,
 } from './view';
+import { MANAGER_STYLES } from './styles';
 
 const ROOT_ID = 'wbm-root';
+const STYLE_ID = 'wbm-styles';
 
 type UiSession = ManagerUiModel & {
   root: HTMLDivElement;
@@ -24,6 +25,11 @@ let activeSession: UiSession | null = null;
 function reportError(context: string, error: unknown): void {
   console.error(`[Worldbook Manager] ${context}`, error);
   toastr.error(error instanceof Error ? error.message : String(error), 'Worldbook Manager');
+}
+
+function ensureHostStyles(): void {
+  if ($(`#${STYLE_ID}`).length > 0) return;
+  $('<style>').attr('id', STYLE_ID).text(MANAGER_STYLES).appendTo('head');
 }
 
 async function refreshSession(session: UiSession, refreshRuntime: boolean): Promise<void> {
@@ -80,7 +86,7 @@ function switchSource(
 }
 
 async function createFolderFromPrompt(session: UiSession): Promise<void> {
-  const name = window.prompt('新 Folder 名称');
+  const name = window.parent.prompt('新 Folder 名称');
   if (name === null) return;
 
   await runBusy(session, async () => {
@@ -91,7 +97,7 @@ async function createFolderFromPrompt(session: UiSession): Promise<void> {
 }
 
 async function createTagFromPrompt(session: UiSession): Promise<void> {
-  const name = window.prompt('新 Tag 名称');
+  const name = window.parent.prompt('新 Tag 名称');
   if (name === null) return;
 
   await runBusy(session, async () => {
@@ -115,8 +121,8 @@ async function saveSelectedBook(session: UiSession): Promise<void> {
 }
 
 function handleClick(session: UiSession, event: MouseEvent): void {
-  const target = event.target;
-  if (!(target instanceof Element)) return;
+  const target = event.target as Element | null;
+  if (!target || typeof target.closest !== 'function') return;
 
   const element = target.closest<HTMLElement>('[data-action]');
   if (!element || !session.root.contains(element)) return;
@@ -183,16 +189,16 @@ function handleClick(session: UiSession, event: MouseEvent): void {
 }
 
 function handleInput(session: UiSession, event: Event): void {
-  const target = event.target;
-  if (!(target instanceof HTMLInputElement) || target.dataset.role !== 'search') return;
+  const target = event.target as HTMLInputElement | null;
+  if (!target || target.dataset?.role !== 'search' || target.tagName !== 'INPUT') return;
 
   session.view.search = target.value;
   renderManagerList(session.root, session);
 }
 
 function handleChange(session: UiSession, event: Event): void {
-  const target = event.target;
-  if (!(target instanceof HTMLSelectElement) || target.dataset.role !== 'sort') return;
+  const target = event.target as HTMLSelectElement | null;
+  if (!target || target.dataset?.role !== 'sort' || target.tagName !== 'SELECT') return;
 
   if (target.value === 'name' || target.value === 'recent' || target.value === 'entryCount') {
     session.view.sort = target.value;
@@ -202,7 +208,7 @@ function handleChange(session: UiSession, event: Event): void {
 
 function mountManager(data: ManagerBootstrapResult): void {
   destroyManagerUi();
-  ensureManagerStyles();
+  ensureHostStyles();
 
   const root = createManagerRoot();
   const view: ViewState = {
@@ -240,9 +246,8 @@ function mountManager(data: ManagerBootstrapResult): void {
   root.addEventListener('click', event => handleClick(session, event));
   root.addEventListener('input', event => handleInput(session, event));
   root.addEventListener('change', event => handleChange(session, event));
-  document.addEventListener('keydown', keydownHandler);
-  document.body.append(root);
-  document.body.classList.add('wbm-lock-scroll');
+  window.parent.document.addEventListener('keydown', keydownHandler);
+  $('body').append(root).addClass('wbm-lock-scroll');
 
   activeSession = session;
   renderManager(root, session);
@@ -255,11 +260,12 @@ export async function openManagerUi(): Promise<void> {
 
 export function destroyManagerUi(): void {
   if (activeSession) {
-    document.removeEventListener('keydown', activeSession.keydownHandler);
+    window.parent.document.removeEventListener('keydown', activeSession.keydownHandler);
     activeSession.root.remove();
     activeSession = null;
-  } else {
-    document.getElementById(ROOT_ID)?.remove();
   }
-  document.body.classList.remove('wbm-lock-scroll');
+
+  $(`#${ROOT_ID}`).remove();
+  $(`#${STYLE_ID}`).remove();
+  $('body').removeClass('wbm-lock-scroll');
 }

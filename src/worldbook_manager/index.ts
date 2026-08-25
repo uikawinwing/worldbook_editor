@@ -20,4 +20,8 @@ destroyManagerUi();
 appendInexistentScriptButtons([{ name: BUTTON_NAME, visible: true }]);
 eventOn(getButtonEvent(BUTTON_NAME), openManager);
 
+$(window)
+  .off('pagehide.worldbook-manager')
+  .on('pagehide.worldbook-manager', () => destroyManagerUi());
+
 void syncManagerState().catch(error => reportError('初始化 metadata 失败', error));
