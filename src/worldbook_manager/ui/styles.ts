@@ -439,11 +439,36 @@ body.wbm-lock-scroll {
 }
 
 @media (max-width: 760px) {
+  #wbm-root {
+    --wbm-bg: #0d1218;
+    --wbm-panel: #141b24;
+    --wbm-panel-2: #18212c;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  #wbm-root .wbm-shell {
+    height: 100dvh;
+  }
+
+  #wbm-root button,
+  #wbm-root input,
+  #wbm-root select {
+    touch-action: manipulation;
+  }
+
   #wbm-root .wbm-header {
-    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    min-height: 0;
+    grid-template-columns: 44px minmax(0, 1fr) 44px 44px;
     grid-template-areas:
       "menu title refresh close"
       "search search search search";
+    gap: 8px;
+    padding:
+      max(8px, env(safe-area-inset-top))
+      max(10px, env(safe-area-inset-right))
+      10px
+      max(10px, env(safe-area-inset-left));
+    background: var(--wbm-panel);
   }
 
   #wbm-root .wbm-menu-button {
@@ -453,6 +478,20 @@ body.wbm-lock-scroll {
 
   #wbm-root .wbm-title {
     grid-area: title;
+    gap: 0;
+    padding-left: 2px;
+  }
+
+  #wbm-root .wbm-title strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 16px;
+    line-height: 1.2;
+  }
+
+  #wbm-root .wbm-title span {
+    display: none;
   }
 
   #wbm-root .wbm-search-wrap {
@@ -467,69 +506,342 @@ body.wbm-lock-scroll {
     grid-area: close;
   }
 
+  #wbm-root .wbm-icon-button {
+    width: 44px;
+    min-height: 44px;
+    border-radius: 12px;
+    color: var(--wbm-muted);
+  }
+
+  #wbm-root .wbm-icon-button:active,
+  #wbm-root .wbm-text-button:active,
+  #wbm-root .wbm-nav-button:active,
+  #wbm-root .wbm-chip:active,
+  #wbm-root .wbm-book-row:active {
+    transform: scale(0.985);
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  #wbm-root .wbm-search {
+    min-height: 46px;
+    border-radius: 12px;
+    padding: 0 14px;
+    background: #0b1016;
+  }
+
   #wbm-root .wbm-body {
     grid-template-columns: 1fr;
   }
 
+  #wbm-root .wbm-main {
+    grid-template-rows: auto auto minmax(0, 1fr);
+    background: var(--wbm-bg);
+  }
+
+  #wbm-root .wbm-toolbar {
+    min-height: 54px;
+    flex-wrap: nowrap;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--wbm-panel);
+  }
+
+  #wbm-root .wbm-toolbar-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  #wbm-root .wbm-toolbar .wbm-select {
+    width: 112px;
+    min-width: 112px;
+  }
+
+  #wbm-root .wbm-select {
+    min-height: 42px;
+    border-radius: 11px;
+    padding: 0 10px;
+    background: #0b1016;
+  }
+
+  #wbm-root .wbm-bound-tabs,
+  #wbm-root .wbm-tags {
+    gap: 7px;
+    padding: 8px 12px 10px;
+    border-bottom: 1px solid var(--wbm-border);
+    background: var(--wbm-panel);
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  #wbm-root .wbm-bound-tabs::-webkit-scrollbar,
+  #wbm-root .wbm-tags::-webkit-scrollbar {
+    display: none;
+  }
+
+  #wbm-root .wbm-chip {
+    min-height: 38px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: var(--wbm-panel-2);
+  }
+
+  #wbm-root .wbm-chip.is-active {
+    color: #dff7ff;
+    border-color: rgba(78, 166, 200, 0.62);
+    background: rgba(78, 166, 200, 0.2);
+  }
+
+  #wbm-root .wbm-list {
+    display: grid;
+    align-content: start;
+    gap: 8px;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    padding:
+      10px
+      max(10px, env(safe-area-inset-right))
+      max(18px, env(safe-area-inset-bottom))
+      max(10px, env(safe-area-inset-left));
+    background: var(--wbm-bg);
+  }
+
+  #wbm-root .wbm-book-row {
+    min-height: 76px;
+    gap: 10px;
+    padding: 12px 12px 11px;
+    border: 1px solid var(--wbm-border);
+    border-radius: 13px;
+    background: var(--wbm-panel);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
+  }
+
+  #wbm-root .wbm-book-main {
+    gap: 6px;
+  }
+
+  #wbm-root .wbm-book-name {
+    font-size: 14px;
+    line-height: 1.35;
+  }
+
+  #wbm-root .wbm-book-raw {
+    font-size: 11px;
+  }
+
+  #wbm-root .wbm-meta-line {
+    gap: 5px;
+  }
+
+  #wbm-root .wbm-badge {
+    min-height: 21px;
+    padding: 1px 7px;
+    font-size: 11px;
+    background: rgba(255, 255, 255, 0.065);
+  }
+
+  #wbm-root .wbm-chevron {
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  #wbm-root .wbm-empty {
+    align-self: center;
+    padding: 48px 20px;
+    border: 1px dashed var(--wbm-border);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.02);
+  }
+
   #wbm-root .wbm-sidebar {
     position: fixed;
-    z-index: 3;
+    z-index: 4;
     inset: 0 auto 0 0;
-    width: min(86vw, 320px);
-    transform: translateX(-100%);
-    transition: transform 150ms ease;
-    box-shadow: 10px 0 26px rgba(0, 0, 0, 0.28);
-    padding-top: max(12px, env(safe-area-inset-top));
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    width: min(90vw, 340px);
+    transform: translateX(-102%);
+    transition: transform 170ms ease;
+    overscroll-behavior: contain;
+    padding:
+      max(18px, env(safe-area-inset-top))
+      12px
+      max(18px, env(safe-area-inset-bottom));
+    border-right: 1px solid var(--wbm-border);
+    background: var(--wbm-panel);
+    box-shadow: 18px 0 44px rgba(0, 0, 0, 0.38);
   }
 
   #wbm-root.wbm-sidebar-open .wbm-sidebar {
     transform: translateX(0);
   }
 
+  #wbm-root .wbm-sidebar-section + .wbm-sidebar-section {
+    margin-top: 24px;
+  }
+
+  #wbm-root .wbm-section-heading {
+    min-height: 40px;
+    padding: 0 8px;
+    font-size: 12px;
+    letter-spacing: 0.02em;
+  }
+
+  #wbm-root .wbm-section-heading .wbm-text-button {
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0 10px;
+    border-radius: 10px;
+  }
+
+  #wbm-root .wbm-sidebar-list {
+    gap: 6px;
+  }
+
+  #wbm-root .wbm-nav-button {
+    min-height: 50px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-size: 14px;
+  }
+
+  #wbm-root .wbm-nav-button.is-active {
+    border-color: rgba(78, 166, 200, 0.46);
+    background: rgba(78, 166, 200, 0.18);
+  }
+
+  #wbm-root .wbm-count {
+    min-width: 28px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.055);
+    text-align: center;
+  }
+
   #wbm-root .wbm-sidebar-scrim {
     position: fixed;
-    z-index: 2;
+    z-index: 3;
     inset: 0;
     border: 0;
-    background: rgba(0, 0, 0, 0.46);
+    background: rgba(0, 0, 0, 0.58);
+    backdrop-filter: blur(2px);
   }
 
   #wbm-root.wbm-sidebar-open .wbm-sidebar-scrim {
     display: block;
   }
 
-  #wbm-root .wbm-toolbar {
-    padding: 9px 10px;
-  }
-
-  #wbm-root .wbm-bound-tabs,
-  #wbm-root .wbm-tags {
-    padding-left: 10px;
-    padding-right: 10px;
-  }
-
-  #wbm-root .wbm-list {
-    padding-left: 6px;
-    padding-right: 6px;
-  }
-
-  #wbm-root .wbm-book-row {
-    padding-left: 10px;
-    padding-right: 10px;
-  }
-
   #wbm-root .wbm-sheet-layer {
+    z-index: 5;
     align-items: end;
     justify-content: stretch;
+    background: rgba(0, 0, 0, 0.62);
+    backdrop-filter: blur(2px);
   }
 
   #wbm-root .wbm-sheet {
+    position: relative;
     width: 100%;
-    height: min(78vh, 720px);
-    border-left: 0;
+    height: auto;
+    max-height: min(86dvh, 760px);
+    padding: 26px 16px max(20px, env(safe-area-inset-bottom));
+    border: 0;
     border-top: 1px solid var(--wbm-border);
-    border-radius: 14px 14px 0 0;
+    border-radius: 20px 20px 0 0;
+    background: var(--wbm-panel);
+    box-shadow: 0 -18px 50px rgba(0, 0, 0, 0.34);
+  }
+
+  #wbm-root .wbm-sheet::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    width: 42px;
+    height: 4px;
+    border-radius: 999px;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  #wbm-root .wbm-sheet-header {
+    margin-bottom: 12px;
+  }
+
+  #wbm-root .wbm-sheet-title h2 {
+    font-size: 17px;
+    line-height: 1.35;
+  }
+
+  #wbm-root .wbm-field {
+    gap: 9px;
+    margin: 16px 0;
+  }
+
+  #wbm-root .wbm-field > label,
+  #wbm-root .wbm-field > .wbm-field-label {
+    font-size: 13px;
+  }
+
+  #wbm-root .wbm-checkbox-list {
+    gap: 8px;
+  }
+
+  #wbm-root .wbm-checkbox-row {
+    min-height: 48px;
+    padding: 8px 11px;
+    border-radius: 11px;
+    background: var(--wbm-panel-2);
+  }
+
+  #wbm-root .wbm-checkbox-row input {
+    width: 20px;
+    height: 20px;
+  }
+
+  #wbm-root .wbm-sheet-actions {
+    gap: 10px;
+    margin: 20px -16px -20px;
+    padding:
+      12px 16px
+      max(12px, env(safe-area-inset-bottom));
+  }
+
+  #wbm-root .wbm-sheet-actions .wbm-text-button {
+    flex: 1 1 0;
+    min-height: 48px;
+    border-radius: 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  #wbm-root .wbm-header {
+    grid-template-columns: 42px minmax(0, 1fr) 42px 42px;
+  }
+
+  #wbm-root .wbm-icon-button {
+    width: 42px;
+    min-height: 42px;
+  }
+
+  #wbm-root .wbm-toolbar {
+    gap: 8px;
+  }
+
+  #wbm-root .wbm-toolbar .wbm-select {
+    width: 104px;
+    min-width: 104px;
+    font-size: 13px;
+  }
+
+  #wbm-root .wbm-book-row {
+    min-height: 72px;
+    padding: 11px;
   }
 }
 `;
