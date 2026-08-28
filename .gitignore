@@ -11,3 +11,6 @@ pnpm-debug.log*
 
 auto-imports.d.ts
 components.d.ts
+
+# Shared Toolchain lives at ../../Toolchain. Ignore accidental nested build artifacts.
+Toolchain/

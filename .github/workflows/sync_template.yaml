@@ -1,30 +1,13 @@
-name: sync_template
+name: legacy_template_sync_disabled
 
+# Template/toolchain updates are centralized in TavernDev/Toolchain.
+# Kept temporarily in the local pilot because CodexPro 8787 does not allow git rm.
+# Remove this file when the shared-toolchain migration is committed to GitHub.
 on:
-  schedule:
-    - cron: 0 3 * * *
   workflow_dispatch:
 
-permissions:
-  actions: write
-  contents: write
-  pull-requests: write
-  repository-projects: read
-
 jobs:
-  sync_template:
-    if: github.repository != 'StageDog/tavern_helper_template'
+  disabled:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: AndreasAugustin/actions-template-sync@v2
-        with:
-          source_repo_path: StageDog/tavern_helper_template
-          pr_title: '[bot] 同步模板仓库的更新'
-          pr_commit_msg: '[bot] bump template repository update'
-          is_pr_cleanup: true
-          template_sync_ignore_file_path: .github/.templatesyncignore
-          is_force_deletion: true
-          git_remote_pull_params: --allow-unrelated-histories --strategy=recursive --no-edit -X diff-algorithm=minimal -X ignore-all-space -X patience -X renormalize
+      - run: echo "Template updates are handled by the shared TavernHelper Toolchain."
