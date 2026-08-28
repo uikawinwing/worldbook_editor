@@ -1,25 +1,52 @@
 {
-  "extends": "../../Toolchain/tsconfig.json",
   "compilerOptions": {
+    "types": [
+      "jquery",
+      "jqueryui",
+      "lodash",
+      "toastr",
+      "type-fest",
+      "yaml",
+      "zod"
+    ],
+    "target": "ESNext",
+    "module": "ESNext",
     "rootDir": ".",
     "outDir": "dist",
-    "skipLibCheck": true,
     "paths": {
-      "@util/*": ["../../Toolchain/util/*"],
-      "@/*": ["./src/*"],
-      "*": ["../../Toolchain/node_modules/*"]
+      "@util/*": [
+        "./util/*"
+      ],
+      "@/*": [
+        "./src/*"
+      ]
     },
-    "typeRoots": [
-      "../../Toolchain/node_modules/@types",
-      "../../Toolchain/node_modules"
-    ]
+    "moduleDetection": "auto",
+    "moduleResolution": "bundler",
+    "allowUmdGlobalAccess": true,
+    "allowSyntheticDefaultImports": true,
+    "strictBindCallApply": true,
+    "allowJs": true,
+    "checkJs": false,
+    "sourceMap": true,
+    "strict": true,
+    "jsx": "react-jsx",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true
   },
   "include": [
+    "@types",
     "src",
-    "../../Toolchain/@types",
-    "../../Toolchain/global.d.ts",
-    "../../Toolchain/auto-imports.d.ts",
-    "../../Toolchain/auto-imports.zod.d.ts"
+    "util",
+    "*.d.ts"
   ],
-  "exclude": ["**/dist/**", "**/node_modules/**"]
+  "exclude": [
+    "**/dist/**",
+    "**/node_modules/**"
+  ]
 }
