@@ -1,0 +1,19 @@
+name: verify
+
+on:
+  pull_request:
+    branches:
+      - master
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    uses: uikawinwing/tavern_helper_toolchain/.github/workflows/consumer-verify.yaml@main
