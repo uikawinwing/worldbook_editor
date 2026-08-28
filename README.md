@@ -1,71 +1,56 @@
 # worldbook_editor
 
-TavernHelper 世界书管理脚本。项目业务代码位于 `src/worldbook_manager`，项目结构说明见 [`docs/architecture.md`](docs/architecture.md)。
-
-## Shared Toolchain
-
-本仓库是 thin consumer，不再自带整套 TavernHelper 模板与依赖。
-
-本地目录约定：
-
-```text
-TavernDev/
-├─ Toolchain/                 # uikawinwing/tavern_helper_toolchain
-└─ Scripts/
-   └─ worldbook_editor/       # 本仓库
-```
-
-共享 Toolchain 负责：
-
-- npm/pnpm dependencies 与 `node_modules`
-- TavernHelper `@types`
-- `util`
-- webpack / PostCSS / Tailwind / schema tooling
-- 模板示例和初始模板
-- dependency / upstream template 更新
-- reusable GitHub Actions
-
-本仓库只维护自己的源码、文档、项目级配置和发布产物。
+TavernHelper 世界书管理脚本。项目业务代码位于 `src/worldbook_manager`，结构说明见 [`docs/architecture.md`](docs/architecture.md)。
 
 ## 本地开发
 
-先确保 `../../Toolchain` 已存在且依赖已安装，然后在本仓库运行：
+本仓库是 standalone 项目，不依赖其他仓库或共享 Toolchain。clone 后直接：
 
 ```bash
-npm run typecheck
-npm run build
-npm run build:dev
-npm run watch
+pnpm install --frozen-lockfile
+pnpm typecheck
+pnpm build
 ```
 
-这些命令不会安装本地依赖，而是调用 `../../Toolchain`。
+共享的 TavernHelper 类型、`util/`、webpack 配置、依赖与 lockfile 都保存在本仓库，因此 fork / clone 后可以独立开发。
 
-不要在本仓库运行 `npm install` / `pnpm install` 来重新建立一套依赖；共享依赖统一安装在：
+维护者本机可能使用 `TavernDev/Toolchain` 同步 StageDog TavernHelper template 更新，但那只是本地维护工具，绝不是本仓库的 build / runtime / CI 依赖。
 
-```text
-../../Toolchain/node_modules
+## Branch 与 CI
+
+- `dev`：日常开发和上游模板同步。push / PR 只运行 verify，不发布版本。
+- `main`：稳定发布。应由 GitHub Ruleset 强制只接受本仓库 `dev -> main` 的 PR，并禁止 direct push、force push 与删除。
+- `main` 更新后，GitHub Actions 会 fresh install、typecheck、build；成功后创建新的 `vX.Y.Z` tag。
+- 发布时生成的 `dist` 只冻结在 release tag 对应的 release-only commit；这个 commit 不回写 `main`，因此不会产生 `[bot] bundle` 历史噪音。
+- 已发布 tag 不移动、不覆盖、不删除。
+
+`dist` 是生成物。日常开发和合并时不需要让本地 `dist` 与 branch 保持一致，正式版本以 tag 中 CI 重新 build 的结果为准。
+
+## 使用固定版本
+
+推荐始终引用明确 tag，而不是 `@main`，例如：
+
+```js
+import 'https://testingcf.jsdelivr.net/gh/uikawinwing/worldbook_editor@v0.0.5/dist/worldbook_manager/index.js';
 ```
 
-## CI
-
-- Pull Request：`.github/workflows/verify.yaml` 调用中央 `consumer-verify.yaml`，只做 typecheck + build。
-- main/master push、定时或手动运行：`.github/workflows/bundle.yaml` 调用中央 `consumer-bundle.yaml`，重新生成 `dist` 并处理发布 tag。
-- dependency、TavernHelper types 与 StageDog template 同步只在 `uikawinwing/tavern_helper_toolchain` 中进行。
+这样后续 `main` / `dev` 继续变化也不会影响已经发布的版本。
 
 ## 目录职责
 
 ```text
 worldbook_editor/
-├─ src/                       # 项目业务源码
-├─ docs/                      # 项目文档
-├─ dist/                      # CI 生成的发布产物
-├─ .github/workflows/         # thin CI callers
-├─ .vscode/                   # 本地开发配置
-├─ package.json               # shared Toolchain 命令入口
-└─ tsconfig.json              # extends ../../Toolchain/tsconfig.json
+├─ src/                  # 业务源码
+├─ @types/               # TavernHelper / SillyTavern 类型
+├─ util/                 # 共享工具函数的本仓库副本
+├─ docs/                 # 项目文档
+├─ .agents/skills/       # 开发参考 Skills
+├─ .github/workflows/    # verify / main guard / release
+├─ package.json
+├─ pnpm-lock.yaml
+├─ tsconfig.json
+└─ webpack.config.ts
 ```
-
-共享 TavernHelper 类型、示例、工具函数和构建配置请直接查看 `../../Toolchain`，不要复制回本仓库。
 
 ## License
 
