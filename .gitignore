@@ -14,3 +14,29 @@ components.d.ts
 
 # Shared Toolchain lives at ../../Toolchain. Ignore accidental nested build artifacts.
 Toolchain/
+
+# Shared-only TavernHelper assets belong to ../../Toolchain and must not drift back into this consumer.
+@types/
+示例/
+初始模板/
+util/
+
+auto-imports.d.ts
+auto-imports.zod.d.ts
+components.d.ts
+dump_schema.ts
+eslint.config.mjs
+global.d.ts
+pnpm-lock.yaml
+pnpm-workspace.yaml
+postcss.config.js
+slash_command.txt
+tailwind.css
+tavern_sync.mjs
+tavern_sync.yaml
+webpack.config.ts
+
+# Dependency/template maintenance is centralized in the shared Toolchain repository.
+.github/.templatesyncignore
+.github/workflows/bump_deps.yaml
+.github/workflows/sync_template.yaml
