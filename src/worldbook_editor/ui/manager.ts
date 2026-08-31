@@ -23,8 +23,8 @@ type UiSession = ManagerUiModel & {
 let activeSession: UiSession | null = null;
 
 function reportError(context: string, error: unknown): void {
-  console.error(`[Worldbook Manager] ${context}`, error);
-  toastr.error(error instanceof Error ? error.message : String(error), 'Worldbook Manager');
+  console.error(`[Worldbook Editor] ${context}`, error);
+  toastr.error(error instanceof Error ? error.message : String(error), 'Worldbook Editor');
 }
 
 function ensureHostStyles(): void {
@@ -92,7 +92,7 @@ async function createFolderFromPrompt(session: UiSession): Promise<void> {
   await runBusy(session, async () => {
     await createFolder(name);
     await refreshSession(session, false);
-    toastr.success('Folder 已建立', 'Worldbook Manager');
+    toastr.success('Folder 已建立', 'Worldbook Editor');
   });
 }
 
@@ -103,7 +103,7 @@ async function createTagFromPrompt(session: UiSession): Promise<void> {
   await runBusy(session, async () => {
     await createTag(name);
     await refreshSession(session, false);
-    toastr.success('Tag 已建立', 'Worldbook Manager');
+    toastr.success('Tag 已建立', 'Worldbook Editor');
   });
 }
 
@@ -116,7 +116,7 @@ async function saveSelectedBook(session: UiSession): Promise<void> {
     await updateLorebookOrganization(bookName, organization);
     await refreshSession(session, false);
     session.selectedBookName = undefined;
-    toastr.success('整理信息已保存', 'Worldbook Manager');
+    toastr.success('整理信息已保存', 'Worldbook Editor');
   });
 }
 
@@ -182,7 +182,7 @@ function handleClick(session: UiSession, event: MouseEvent): void {
     case 'refresh':
       void runBusy(session, async () => {
         await refreshSession(session, true);
-        toastr.success('已重新读取 Tavern 状态', 'Worldbook Manager');
+        toastr.success('已重新读取 Tavern 状态', 'Worldbook Editor');
       }).catch(error => reportError('刷新失败', error));
       return;
   }
