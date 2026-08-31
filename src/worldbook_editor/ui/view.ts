@@ -43,7 +43,7 @@ function getElement<T extends Element>(
 ): T {
   const element = root.querySelector<T>(selector);
   if (!element) {
-    throw new Error(`Worldbook Manager UI 缺少元素：${selector}`);
+    throw new Error(`Worldbook Editor UI 缺少元素：${selector}`);
   }
   return element;
 }
@@ -326,7 +326,7 @@ function renderSheet(root: HTMLElement, model: ManagerUiModel): void {
           <div class="wbm-field">
             <div class="wbm-field-label">Tags</div>
             <div class="wbm-checkbox-list">
-              ${tags || '<span class="wbm-sheet-note">还没有 Tag，可以先在 Manager 顶部建立</span>'}
+              ${tags || '<span class="wbm-sheet-note">还没有 Tag，可以先在编辑器顶部建立</span>'}
             </div>
           </div>
           <div class="wbm-field">
@@ -360,11 +360,11 @@ export function createManagerRoot(): HTMLDivElement {
   const root = document.createElement('div');
   root.id = 'wbm-root';
   root.innerHTML = `
-    <section class="wbm-shell" role="dialog" aria-modal="true" aria-label="Worldbook Manager">
+    <section class="wbm-shell" role="dialog" aria-modal="true" aria-label="Worldbook Editor">
       <header class="wbm-header">
         <button type="button" class="wbm-icon-button wbm-menu-button" data-action="toggle-sidebar" aria-label="打开导航">☰</button>
         <div class="wbm-title">
-          <strong>Worldbook Manager</strong>
+          <strong>Worldbook Editor</strong>
           <span data-role="library-summary"></span>
         </div>
         <div class="wbm-search-wrap">
