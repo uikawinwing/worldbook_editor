@@ -38,6 +38,8 @@ https://testingcf.jsdelivr.net/gh/uikawinwing/worldbook_editor@vX.Y.Z/dist/world
 
 ## 目录职责
 
+源码、发布路径和用户可见品牌统一使用 `Worldbook Editor`；UI DOM / CSS 的内部命名空间使用 `wbe-*`。
+
 ```text
 worldbook_editor/
 ├─ src/                  # 业务源码
