@@ -9,7 +9,7 @@ import { type Folder, type ManagerState } from '../model';
 import type { ManagerBootstrapResult } from '../services/manager';
 import { MANAGER_STYLES } from './styles';
 
-const STYLE_ID = 'wbm-styles';
+const STYLE_ID = 'wbe-styles';
 
 export type ManagerUiModel = {
   data: ManagerBootstrapResult;
@@ -108,10 +108,10 @@ function navButton(
   active: boolean,
 ): string {
   const id = source.type === 'folder' ? source.folderId : source.smartId;
-  return `<button type="button" class="wbm-nav-button${active ? ' is-active' : ''}"
+  return `<button type="button" class="wbe-nav-button${active ? ' is-active' : ''}"
     data-action="switch-source" data-source-type="${source.type}" data-source-id="${attr(id)}">
-    <span class="wbm-nav-label">${escapeHtml(label)}</span>
-    <span class="wbm-count">${count}</span>
+    <span class="wbe-nav-label">${escapeHtml(label)}</span>
+    <span class="wbe-count">${count}</span>
   </button>`;
 }
 
@@ -168,7 +168,7 @@ function renderBoundTabs(root: HTMLElement, model: ManagerUiModel): void {
   ]
     .map(
       ([id, label]) =>
-        `<button type="button" class="wbm-chip${current === id ? ' is-active' : ''}"
+        `<button type="button" class="wbe-chip${current === id ? ' is-active' : ''}"
           data-action="set-bound-subtype" data-bound-subtype="${id}">${label}</button>`,
     )
     .join('');
@@ -183,15 +183,15 @@ function renderTags(root: HTMLElement, model: ManagerUiModel): void {
   const tagHtml = tags
     .map(
       tag =>
-        `<button type="button" class="wbm-chip${
+        `<button type="button" class="wbe-chip${
           model.view.tagIds.includes(tag.id) ? ' is-active' : ''
         }" data-action="toggle-tag-filter" data-tag-id="${attr(tag.id)}">${escapeHtml(tag.name)}</button>`,
     )
     .join('');
 
   container.innerHTML = `${
-    tags.length === 0 ? '<span class="wbm-book-raw">还没有 Tag</span>' : ''
-  }${tagHtml}<button type="button" class="wbm-chip" data-action="create-tag">＋ Tag</button>`;
+    tags.length === 0 ? '<span class="wbe-book-raw">还没有 Tag</span>' : ''
+  }${tagHtml}<button type="button" class="wbe-chip" data-action="create-tag">＋ Tag</button>`;
 }
 
 function sourceLabel(model: ManagerUiModel): string {
@@ -207,7 +207,7 @@ function sourceLabel(model: ManagerUiModel): string {
 }
 
 function badge(text: string): string {
-  return `<span class="wbm-badge">${escapeHtml(text)}</span>`;
+  return `<span class="wbe-badge">${escapeHtml(text)}</span>`;
 }
 
 function bookRow(model: ManagerUiModel, book: LorebookSummary): string {
@@ -223,18 +223,18 @@ function bookRow(model: ManagerUiModel, book: LorebookSummary): string {
   if (book.chatBindingsKnown > 0) metadata.push(badge(`聊天 ${book.chatBindingsKnown}`));
   if (book.entryCount !== undefined) metadata.push(badge(`${book.entryCount} 条`));
 
-  return `<button type="button" class="wbm-book-row" data-action="open-book"
+  return `<button type="button" class="wbe-book-row" data-action="open-book"
     data-book-name="${attr(encodeURIComponent(book.name))}">
-    <span class="wbm-book-main">
-      <span class="wbm-book-name">${escapeHtml(book.displayName)}</span>
+    <span class="wbe-book-main">
+      <span class="wbe-book-name">${escapeHtml(book.displayName)}</span>
       ${
         book.displayName !== book.name
-          ? `<span class="wbm-book-raw">${escapeHtml(book.name)}</span>`
+          ? `<span class="wbe-book-raw">${escapeHtml(book.name)}</span>`
           : ''
       }
-      <span class="wbm-meta-line">${metadata.join('')}</span>
+      <span class="wbe-meta-line">${metadata.join('')}</span>
     </span>
-    <span class="wbm-chevron">›</span>
+    <span class="wbe-chevron">›</span>
   </button>`;
 }
 
@@ -252,7 +252,7 @@ function renderList(root: HTMLElement, model: ManagerUiModel): void {
   sort.value = model.view.sort;
   list.innerHTML =
     visible.length === 0
-      ? '<div class="wbm-empty">这里暂时没有符合条件的世界书</div>'
+      ? '<div class="wbe-empty">这里暂时没有符合条件的世界书</div>'
       : visible.map(book => bookRow(model, book)).join('');
 }
 
@@ -296,7 +296,7 @@ function renderSheet(root: HTMLElement, model: ManagerUiModel): void {
   const tags = [...model.data.state.tags]
     .sort((left, right) => left.name.localeCompare(right.name))
     .map(
-      tag => `<label class="wbm-checkbox-row">
+      tag => `<label class="wbe-checkbox-row">
         <input type="checkbox" data-role="sheet-tag" value="${attr(tag.id)}"${
           book.tagIds.includes(tag.id) ? ' checked' : ''
         }>
@@ -306,40 +306,40 @@ function renderSheet(root: HTMLElement, model: ManagerUiModel): void {
     .join('');
 
   sheet.innerHTML = `
-    <div class="wbm-sheet-header">
-      <div class="wbm-sheet-title">
+    <div class="wbe-sheet-header">
+      <div class="wbe-sheet-title">
         <h2>${escapeHtml(book.displayName)}</h2>
-        <div class="wbm-sheet-note">${escapeHtml(book.name)}</div>
+        <div class="wbe-sheet-note">${escapeHtml(book.name)}</div>
       </div>
-      <button type="button" class="wbm-icon-button" data-action="close-sheet" aria-label="关闭">×</button>
+      <button type="button" class="wbe-icon-button" data-action="close-sheet" aria-label="关闭">×</button>
     </div>
     ${
       book.inTrash
-        ? '<div class="wbm-empty">回收站恢复与永久删除会在 Trash 里程碑接入</div>'
+        ? '<div class="wbe-empty">回收站恢复与永久删除会在 Trash 里程碑接入</div>'
         : `
-          <div class="wbm-field">
+          <div class="wbe-field">
             <label>Folder</label>
-            <select class="wbm-select" data-role="sheet-folder">
+            <select class="wbe-select" data-role="sheet-folder">
               ${folderOptions(model.data.state.folders, book.folderId)}
             </select>
           </div>
-          <div class="wbm-field">
-            <div class="wbm-field-label">Tags</div>
-            <div class="wbm-checkbox-list">
-              ${tags || '<span class="wbm-sheet-note">还没有 Tag，可以先在编辑器顶部建立</span>'}
+          <div class="wbe-field">
+            <div class="wbe-field-label">Tags</div>
+            <div class="wbe-checkbox-list">
+              ${tags || '<span class="wbe-sheet-note">还没有 Tag，可以先在编辑器顶部建立</span>'}
             </div>
           </div>
-          <div class="wbm-field">
-            <div class="wbm-field-label">绑定</div>
-            <div class="wbm-sheet-note">${
+          <div class="wbe-field">
+            <div class="wbe-field-label">绑定</div>
+            <div class="wbe-sheet-note">${
               bindings.length > 0
                 ? escapeHtml(bindings.join(' · '))
                 : '没有确认到 Character / Chat binding'
             }</div>
           </div>
-          <div class="wbm-sheet-actions">
-            <button type="button" class="wbm-text-button" data-action="close-sheet">取消</button>
-            <button type="button" class="wbm-text-button is-primary" data-action="save-book">保存</button>
+          <div class="wbe-sheet-actions">
+            <button type="button" class="wbe-text-button" data-action="close-sheet">取消</button>
+            <button type="button" class="wbe-text-button is-primary" data-action="save-book">保存</button>
           </div>
         `
     }
@@ -358,52 +358,52 @@ export function ensureManagerStyles(): void {
 
 export function createManagerRoot(): HTMLDivElement {
   const root = document.createElement('div');
-  root.id = 'wbm-root';
+  root.id = 'wbe-root';
   root.innerHTML = `
-    <section class="wbm-shell" role="dialog" aria-modal="true" aria-label="Worldbook Editor">
-      <header class="wbm-header">
-        <button type="button" class="wbm-icon-button wbm-menu-button" data-action="toggle-sidebar" aria-label="打开导航">☰</button>
-        <div class="wbm-title">
+    <section class="wbe-shell" role="dialog" aria-modal="true" aria-label="Worldbook Editor">
+      <header class="wbe-header">
+        <button type="button" class="wbe-icon-button wbe-menu-button" data-action="toggle-sidebar" aria-label="打开导航">☰</button>
+        <div class="wbe-title">
           <strong>Worldbook Editor</strong>
           <span data-role="library-summary"></span>
         </div>
-        <div class="wbm-search-wrap">
-          <input class="wbm-search" data-role="search" type="search" placeholder="搜索世界书…" autocomplete="off">
+        <div class="wbe-search-wrap">
+          <input class="wbe-search" data-role="search" type="search" placeholder="搜索世界书…" autocomplete="off">
         </div>
-        <button type="button" class="wbm-icon-button" data-action="refresh" aria-label="刷新">↻</button>
-        <button type="button" class="wbm-icon-button" data-action="close" aria-label="关闭">×</button>
+        <button type="button" class="wbe-icon-button" data-action="refresh" aria-label="刷新">↻</button>
+        <button type="button" class="wbe-icon-button" data-action="close" aria-label="关闭">×</button>
       </header>
-      <div class="wbm-body">
-        <aside class="wbm-sidebar">
-          <section class="wbm-sidebar-section">
-            <div class="wbm-section-heading"><span>Smart Views</span></div>
-            <div class="wbm-sidebar-list" data-role="smart-list"></div>
+      <div class="wbe-body">
+        <aside class="wbe-sidebar">
+          <section class="wbe-sidebar-section">
+            <div class="wbe-section-heading"><span>Smart Views</span></div>
+            <div class="wbe-sidebar-list" data-role="smart-list"></div>
           </section>
-          <section class="wbm-sidebar-section">
-            <div class="wbm-section-heading">
+          <section class="wbe-sidebar-section">
+            <div class="wbe-section-heading">
               <span>Folders</span>
-              <button type="button" class="wbm-text-button" data-action="create-folder">＋</button>
+              <button type="button" class="wbe-text-button" data-action="create-folder">＋</button>
             </div>
-            <div class="wbm-sidebar-list" data-role="folder-list"></div>
+            <div class="wbe-sidebar-list" data-role="folder-list"></div>
           </section>
         </aside>
-        <button type="button" class="wbm-sidebar-scrim" data-action="close-sidebar" aria-label="关闭导航"></button>
-        <main class="wbm-main">
-          <div class="wbm-toolbar">
-            <span class="wbm-toolbar-label" data-role="view-label"></span>
-            <select class="wbm-select" data-role="sort" aria-label="排序">
+        <button type="button" class="wbe-sidebar-scrim" data-action="close-sidebar" aria-label="关闭导航"></button>
+        <main class="wbe-main">
+          <div class="wbe-toolbar">
+            <span class="wbe-toolbar-label" data-role="view-label"></span>
+            <select class="wbe-select" data-role="sort" aria-label="排序">
               <option value="name">名称</option>
               <option value="recent">最近新增</option>
               <option value="entryCount">条目数</option>
             </select>
           </div>
-          <div class="wbm-bound-tabs" data-role="bound-tabs" hidden></div>
-          <div class="wbm-tags" data-role="tags"></div>
-          <div class="wbm-list" data-role="list"></div>
+          <div class="wbe-bound-tabs" data-role="bound-tabs" hidden></div>
+          <div class="wbe-tags" data-role="tags"></div>
+          <div class="wbe-list" data-role="list"></div>
         </main>
       </div>
-      <div class="wbm-sheet-layer" data-role="sheet-layer" hidden>
-        <section class="wbm-sheet" data-role="sheet"></section>
+      <div class="wbe-sheet-layer" data-role="sheet-layer" hidden>
+        <section class="wbe-sheet" data-role="sheet"></section>
       </div>
     </section>
   `;
@@ -424,8 +424,8 @@ export function renderManager(root: HTMLElement, model: ManagerUiModel): void {
   renderList(root, model);
   renderSheet(root, model);
 
-  getElement<HTMLElement>(root, '.wbm-shell').classList.toggle('is-busy', model.busy);
-  root.classList.toggle('wbm-sidebar-open', model.sidebarOpen);
+  getElement<HTMLElement>(root, '.wbe-shell').classList.toggle('is-busy', model.busy);
+  root.classList.toggle('wbe-sidebar-open', model.sidebarOpen);
 }
 
 export function renderManagerList(root: HTMLElement, model: ManagerUiModel): void {

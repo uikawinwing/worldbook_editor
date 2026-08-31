@@ -12,8 +12,8 @@ import {
 } from './view';
 import { MANAGER_STYLES } from './styles';
 
-const ROOT_ID = 'wbm-root';
-const STYLE_ID = 'wbm-styles';
+const ROOT_ID = 'wbe-root';
+const STYLE_ID = 'wbe-styles';
 
 type UiSession = ManagerUiModel & {
   root: HTMLDivElement;
@@ -247,7 +247,7 @@ function mountManager(data: ManagerBootstrapResult): void {
   root.addEventListener('input', event => handleInput(session, event));
   root.addEventListener('change', event => handleChange(session, event));
   window.parent.document.addEventListener('keydown', keydownHandler);
-  $('body').append(root).addClass('wbm-lock-scroll');
+  $('body').append(root).addClass('wbe-lock-scroll');
 
   activeSession = session;
   renderManager(root, session);
@@ -267,5 +267,5 @@ export function destroyManagerUi(): void {
 
   $(`#${ROOT_ID}`).remove();
   $(`#${STYLE_ID}`).remove();
-  $('body').removeClass('wbm-lock-scroll');
+  $('body').removeClass('wbe-lock-scroll');
 }
