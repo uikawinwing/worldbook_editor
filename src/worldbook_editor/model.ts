@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const MANAGER_STATE_VERSION = 1;
-export const MANAGER_STATE_VARIABLE_KEY = 'worldbook_manager_state';
+export const MANAGER_STATE_VARIABLE_KEY = 'worldbook_editor_state';
 export const UNFILED_FOLDER_ID = 'system:unfiled';
 
 const folderSchema = z.object({
