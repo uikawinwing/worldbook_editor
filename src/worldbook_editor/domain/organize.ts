@@ -197,7 +197,7 @@ export function updateLorebookOrganization(
 ): ManagerState {
   const meta = state.books[lorebookName];
   if (!meta) {
-    throw new Error(`世界书「${lorebookName}」不在 Manager metadata 中`);
+    throw new Error(`世界书「${lorebookName}」不在 Editor metadata 中`);
   }
   if (!state.folders.some(folder => folder.id === organization.folderId)) {
     throw new Error('目标 Folder 不存在');
