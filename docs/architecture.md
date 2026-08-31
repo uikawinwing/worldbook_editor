@@ -1,4 +1,4 @@
-# Worldbook Manager 架构约束
+# Worldbook Editor 架构约束
 
 本文件只记录维护代码时必须遵守的边界与开发顺序；产品行为以 Phase 1 规格为准。
 
@@ -9,9 +9,9 @@ Phase 1 是 Lorebook Library / File Manager，不是 Entry Editor。优先解决
 ## 当前模块
 
 ```text
-src/worldbook_manager/
+src/worldbook_editor/
   index.ts                  # 脚本生命周期与 Script Button；不写业务逻辑
-  model.ts                  # Manager 自己拥有的数据契约与 Zod 校验
+  model.ts                  # Editor 自己拥有的数据契约与 Zod 校验
   data/
     tavern.ts               # Tavern Helper API adapter
     metadata.ts             # Script Variables persistence
@@ -22,7 +22,7 @@ src/worldbook_manager/
   infra/
     keyed-queue.ts          # 无业务含义的 keyed serialization primitive
   services/
-    state.ts                # Manager metadata 唯一 mutation queue + sync
+    state.ts                # Editor metadata 唯一 mutation queue + sync
     manager.ts              # 首屏 bootstrap / runtime binding snapshot
     organize.ts             # Folder / Tag application service
   ui/
@@ -53,35 +53,35 @@ infra 只提供无业务含义的小工具
 - `domain/` 调 Tavern Helper、DOM、localStorage、Script Variables。
 - `ui/` 直接调用 `getWorldbook*`、`rebind*`、`deleteWorldbook` 或 Script Variables。
 - 在 `model.ts` 塞业务流程。
-- 在多个 service 各自建立 metadata mutation queue；Manager state 只能走 `services/state.ts`。
+- 在多个 service 各自建立 metadata mutation queue；Editor state 只能走 `services/state.ts`。
 
 ## Source of Truth
 
 - Lorebook 是否存在：Tavern Helper / SillyTavern。
 - Character / Global binding：Tavern Helper / SillyTavern。
-- Folder / Tag / Prefix Rule / Trash metadata：Script Variables 中的 `worldbook_manager_state`。
+- Folder / Tag / Prefix Rule / Trash metadata：Script Variables 中的 `worldbook_editor_state`。
 - Cache 永远可以删除重建，不能反过来覆盖真实绑定。
 
-不要把 Manager metadata 写进 Lorebook Entry、`extra`、隐藏 Entry 或 Lorebook 名称。localStorage 只可用于非关键 UI cache。
+不要把 Editor metadata 写进 Lorebook Entry、`extra`、隐藏 Entry 或 Lorebook 名称。localStorage 只可用于非关键 UI cache。
 
 ## API 策略
 
 只使用模板 `@types` 当前推荐的 API；不为 deprecated `LorebookEntry` / `getLorebooks` 建兼容层。
 
-Adapter 只包装真正被当前里程碑使用的 API。Tavern Helper 的原始返回结构只能在 `data/` 出现，上层使用 Manager 自己的 normalized type。
+Adapter 只包装真正被当前里程碑使用的 API。Tavern Helper 的原始返回结构只能在 `data/` 出现，上层使用 Editor 自己的 normalized type。
 
 Chat history 的类型仍不稳定，因此 Chat binding mapping 必须留在 adapter 边界内，并且在真实环境验证前不能成为核心功能的阻塞条件。
 
 ## 写操作规则
 
-Manager metadata 的所有 mutation 必须经过同一个 `KeyedQueue`。Folder / Tag 这类安全操作只写 metadata；跨 Tavern + Manager metadata 的高风险操作必须遵循：
+Editor metadata 的所有 mutation 必须经过同一个 `KeyedQueue`。Folder / Tag 这类安全操作只写 metadata；跨 Tavern + Editor metadata 的高风险操作必须遵循：
 
 ```text
 读取真实状态
 → 计算目标状态
 → 串行执行 Tavern API
 → 再读并验证结果
-→ 最后提交 Manager metadata
+→ 最后提交 Editor metadata
 ```
 
 UI 不能 optimistic 地假装成功。Batch 操作必须返回逐项成功/失败结果；一个失败不能抹掉其他成功项。
@@ -95,7 +95,7 @@ UI 不能 optimistic 地假装成功。Batch 操作必须返回逐项成功/失�
 - 单行世界书使用事件委派，不为每一行建立独立永久 listener。
 - 不依赖 hover、右键、drag-only 操作；核心触控目标约 44px。
 - 用户输入/世界书名称渲染到 HTML 前必须 escape。
-- 关闭或热重载时清理 Manager root 与 document listener。
+- 关闭或热重载时清理 Editor root 与 document listener。
 
 ## 性能预算
 
@@ -108,7 +108,7 @@ Entry count、Chat mapping 等昂贵信息以后采用 lazy load + cache；搜�
 ## 开发顺序
 
 1. **Foundation（完成）**：API adapter、metadata schema/persistence、baseline/reconcile、summary/view、mutation queue。
-2. **Folder / Tag + Manager Shell（当前）**：安全 metadata CRUD、responsive UI、Folder/Smart View、Tag filter、Search、单本 Move/Tag。
+2. **Folder / Tag + Editor Shell（当前）**：安全 metadata CRUD、responsive UI、Folder/Smart View、Tag filter、Search、单本 Move/Tag。
 3. **Batch organize**：多选、批量 Move / Add Tag / Remove Tag。
 4. **Bindings / Trash**：按 read → change → verify → metadata 实现；Soft Trash 优先。
 5. **Lazy enhancements**：Entry count、Chat mapping、cache refresh。
