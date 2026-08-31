@@ -28,13 +28,13 @@ pnpm build
 
 ## 使用固定版本
 
-推荐始终引用明确 tag，而不是 `@main`，例如：
+推荐始终引用明确 tag，而不是 `@main`。从包含本次命名清理的新版本开始，入口路径为：
 
-```js
-import 'https://testingcf.jsdelivr.net/gh/uikawinwing/worldbook_editor@v0.0.5/dist/worldbook_editor/index.js';
+```text
+https://testingcf.jsdelivr.net/gh/uikawinwing/worldbook_editor@vX.Y.Z/dist/worldbook_editor/index.js
 ```
 
-这样后续 `main` / `dev` 继续变化也不会影响已经发布的版本。
+旧 tag 保持其发布时的文件结构，不会为了改名而重写。这样后续 `main` / `dev` 继续变化也不会影响已经发布的版本。
 
 ## 目录职责
 
