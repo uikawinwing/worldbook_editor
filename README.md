@@ -1,6 +1,6 @@
-# worldbook_editor
+# Worldbook Editor
 
-TavernHelper 世界书管理脚本。项目业务代码位于 `src/worldbook_manager`，结构说明见 [`docs/architecture.md`](docs/architecture.md)。
+TavernHelper 世界书编辑与整理脚本。项目业务代码位于 `src/worldbook_editor`，结构说明见 [`docs/architecture.md`](docs/architecture.md)。
 
 ## 本地开发
 
@@ -31,7 +31,7 @@ pnpm build
 推荐始终引用明确 tag，而不是 `@main`，例如：
 
 ```js
-import 'https://testingcf.jsdelivr.net/gh/uikawinwing/worldbook_editor@v0.0.5/dist/worldbook_manager/index.js';
+import 'https://testingcf.jsdelivr.net/gh/uikawinwing/worldbook_editor@v0.0.5/dist/worldbook_editor/index.js';
 ```
 
 这样后续 `main` / `dev` 继续变化也不会影响已经发布的版本。
