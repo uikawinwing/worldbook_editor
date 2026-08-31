@@ -16,7 +16,7 @@ export type ManagerSyncReport = {
 };
 
 function invalidStateError(issues: readonly string[]): Error {
-  return new Error(`Worldbook Manager metadata 无法通过校验，已拒绝自动覆盖。\n${issues.join('\n')}`);
+  return new Error(`Worldbook Editor metadata 无法通过校验，已拒绝自动覆盖。\n${issues.join('\n')}`);
 }
 
 export async function syncManagerState(now = Date.now()): Promise<{
