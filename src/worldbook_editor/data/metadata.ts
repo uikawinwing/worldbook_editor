@@ -26,12 +26,9 @@ export function loadManagerState(): ManagerStateLoadResult {
     if (current === undefined && legacy !== undefined) {
       updateVariablesWith(
         previous => {
-          const next = {
-            ...previous,
-            [MANAGER_STATE_VARIABLE_KEY]: parsed.data,
-          };
-          delete next[LEGACY_STATE_VARIABLE_KEY];
-          return next;
+          previous[MANAGER_STATE_VARIABLE_KEY] = parsed.data;
+          delete previous[LEGACY_STATE_VARIABLE_KEY];
+          return previous;
         },
         { type: 'script' },
       );
@@ -52,12 +49,9 @@ export function saveManagerState(state: ManagerState): ManagerState {
 
   updateVariablesWith(
     variables => {
-      const next = {
-        ...variables,
-        [MANAGER_STATE_VARIABLE_KEY]: validated,
-      };
-      delete next[LEGACY_STATE_VARIABLE_KEY];
-      return next;
+      variables[MANAGER_STATE_VARIABLE_KEY] = validated;
+      delete variables[LEGACY_STATE_VARIABLE_KEY];
+      return variables;
     },
     { type: 'script' },
   );
