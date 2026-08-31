@@ -4,6 +4,8 @@ import {
   managerStateSchema,
 } from '../model';
 
+const LEGACY_STATE_VARIABLE_KEY = ['worldbook', 'manager', 'state'].join('_');
+
 export type ManagerStateLoadResult =
   | { kind: 'missing' }
   | { kind: 'ok'; state: ManagerState }
@@ -11,7 +13,9 @@ export type ManagerStateLoadResult =
 
 export function loadManagerState(): ManagerStateLoadResult {
   const variables = getVariables({ type: 'script' });
-  const raw = variables[MANAGER_STATE_VARIABLE_KEY];
+  const current = variables[MANAGER_STATE_VARIABLE_KEY];
+  const legacy = variables[LEGACY_STATE_VARIABLE_KEY];
+  const raw = current ?? legacy;
 
   if (raw === undefined) {
     return { kind: 'missing' };
@@ -19,6 +23,20 @@ export function loadManagerState(): ManagerStateLoadResult {
 
   const parsed = managerStateSchema.safeParse(raw);
   if (parsed.success) {
+    if (current === undefined && legacy !== undefined) {
+      updateVariablesWith(
+        previous => {
+          const next = {
+            ...previous,
+            [MANAGER_STATE_VARIABLE_KEY]: parsed.data,
+          };
+          delete next[LEGACY_STATE_VARIABLE_KEY];
+          return next;
+        },
+        { type: 'script' },
+      );
+    }
+
     return { kind: 'ok', state: parsed.data };
   }
 
@@ -33,10 +51,14 @@ export function saveManagerState(state: ManagerState): ManagerState {
   const validated = managerStateSchema.parse(state);
 
   updateVariablesWith(
-    variables => ({
-      ...variables,
-      [MANAGER_STATE_VARIABLE_KEY]: validated,
-    }),
+    variables => {
+      const next = {
+        ...variables,
+        [MANAGER_STATE_VARIABLE_KEY]: validated,
+      };
+      delete next[LEGACY_STATE_VARIABLE_KEY];
+      return next;
+    },
     { type: 'script' },
   );
 
