@@ -93,7 +93,40 @@ body.wbm-lock-scroll {
   width: 44px;
   display: inline-grid;
   place-items: center;
+  margin: 0;
+  padding: 0;
+  line-height: 1;
   font-size: 21px;
+}
+
+#wbm-root .wbm-menu-glyph {
+  position: relative;
+  width: 20px;
+  height: 14px;
+  display: block;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 100% 2px;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+#wbm-root .wbm-menu-glyph::before,
+#wbm-root .wbm-menu-glyph::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 20px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+#wbm-root .wbm-menu-glyph::before {
+  top: 0;
+}
+
+#wbm-root .wbm-menu-glyph::after {
+  bottom: 0;
 }
 
 #wbm-root .wbm-icon-button:hover,
@@ -590,6 +623,12 @@ body.wbm-lock-scroll {
   #wbm-root .wbm-menu-button {
     grid-area: menu;
     display: inline-grid;
+    align-self: center;
+    justify-self: start;
+    position: relative;
+    z-index: 1;
+    overflow: visible;
+    pointer-events: auto;
   }
 
   #wbm-root .wbm-title {

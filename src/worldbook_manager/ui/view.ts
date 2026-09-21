@@ -502,7 +502,7 @@ export function createManagerRoot(): HTMLDivElement {
   root.innerHTML = `
     <section class="wbm-shell" role="dialog" aria-modal="true" aria-label="Worldbook Editor">
       <header class="wbm-header">
-        <button type="button" class="wbm-icon-button wbm-menu-button" data-action="toggle-sidebar" aria-label="打开导航">☰</button>
+        <button type="button" class="wbm-icon-button wbm-menu-button" data-action="toggle-sidebar" aria-label="打开导航"><span class="wbm-menu-glyph" aria-hidden="true"></span></button>
         <div class="wbm-title">
           <strong>世界书编辑器</strong>
           <span data-role="library-summary"></span>
