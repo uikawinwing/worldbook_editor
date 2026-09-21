@@ -1,9 +1,11 @@
 import { type SmartViewId, type ViewState } from '../domain/views';
 import { UNFILED_FOLDER_ID } from '../model';
+import { createEntry, deleteEntry, loadLorebookEntries, updateEntry } from '../services/entries';
 import { createFolder, createTag, updateLorebookOrganization } from '../services/organize';
 import { bootstrapManager, type ManagerBootstrapResult } from '../services/manager';
 import {
   createManagerRoot,
+  readEntryEditorDraft,
   readSheetOrganization,
   renderManager,
   renderManagerList,
@@ -115,8 +117,80 @@ async function saveSelectedBook(session: UiSession): Promise<void> {
   await runBusy(session, async () => {
     await updateLorebookOrganization(bookName, organization);
     await refreshSession(session, false);
-    session.selectedBookName = undefined;
-    toastr.success('整理信息已保存', 'Worldbook Manager');
+    clearSelectedBook(session);
+    toastr.success('整理信息已保存', 'Worldbook Editor');
+  });
+}
+
+function clearSelectedBook(session: UiSession): void {
+  session.selectedBookName = undefined;
+  session.bookEntries = undefined;
+  session.bookEntriesFor = undefined;
+  session.bookEntriesError = undefined;
+  session.bookEntriesLoading = false;
+  session.selectedEntryUid = undefined;
+}
+
+async function loadSelectedBook(session: UiSession, bookName: string): Promise<void> {
+  session.bookEntriesLoading = true;
+  session.bookEntriesError = undefined;
+  session.bookEntriesFor = bookName;
+  session.bookEntries = undefined;
+  session.selectedEntryUid = undefined;
+  renderManagerSheet(session.root, session);
+
+  try {
+    const entries = await loadLorebookEntries(bookName);
+    if (session.selectedBookName !== bookName) return;
+    session.bookEntries = entries;
+  } catch (error) {
+    if (session.selectedBookName !== bookName) return;
+    session.bookEntriesError = error instanceof Error ? error.message : String(error);
+  } finally {
+    if (session.selectedBookName === bookName) {
+      session.bookEntriesLoading = false;
+      renderManagerSheet(session.root, session);
+    }
+  }
+}
+
+async function createSelectedEntry(session: UiSession): Promise<void> {
+  const bookName = session.selectedBookName;
+  if (!bookName) return;
+
+  await runBusy(session, async () => {
+    const result = await createEntry(bookName);
+    session.bookEntries = result.worldbook;
+    session.bookEntriesFor = bookName;
+    session.selectedEntryUid = result.entry.uid;
+    toastr.success('条目已建立', 'Worldbook Editor');
+  });
+}
+
+async function saveSelectedEntry(session: UiSession): Promise<void> {
+  const bookName = session.selectedBookName;
+  const uid = session.selectedEntryUid;
+  if (!bookName || uid === undefined) return;
+
+  const draft = readEntryEditorDraft(session.root);
+  await runBusy(session, async () => {
+    session.bookEntries = await updateEntry(bookName, uid, draft);
+    session.bookEntriesFor = bookName;
+    toastr.success('世界书条目已保存', 'Worldbook Editor');
+  });
+}
+
+async function deleteSelectedEntry(session: UiSession): Promise<void> {
+  const bookName = session.selectedBookName;
+  const uid = session.selectedEntryUid;
+  if (!bookName || uid === undefined) return;
+  if (!window.parent.confirm('确定删除这个世界书条目？')) return;
+
+  await runBusy(session, async () => {
+    session.bookEntries = await deleteEntry(bookName, uid);
+    session.bookEntriesFor = bookName;
+    session.selectedEntryUid = undefined;
+    toastr.success('世界书条目已删除', 'Worldbook Editor');
   });
 }
 
@@ -163,12 +237,46 @@ function handleClick(session: UiSession, event: MouseEvent): void {
       const encodedName = element.dataset.bookName;
       if (!encodedName) return;
       session.selectedBookName = decodeURIComponent(encodedName);
+      session.bookEntries = undefined;
+      session.bookEntriesFor = session.selectedBookName;
+      session.bookEntriesError = undefined;
+      session.selectedEntryUid = undefined;
       renderManagerSheet(session.root, session);
+      void loadSelectedBook(session, session.selectedBookName).catch(error =>
+        reportError('读取世界书条目失败', error),
+      );
       return;
     }
     case 'close-sheet':
-      session.selectedBookName = undefined;
+      clearSelectedBook(session);
       renderManagerSheet(session.root, session);
+      return;
+    case 'reload-book':
+      if (session.selectedBookName) {
+        void loadSelectedBook(session, session.selectedBookName).catch(error =>
+          reportError('读取世界书条目失败', error),
+        );
+      }
+      return;
+    case 'open-entry': {
+      const uid = Number(element.dataset.entryUid);
+      if (!Number.isInteger(uid)) return;
+      session.selectedEntryUid = uid;
+      renderManagerSheet(session.root, session);
+      return;
+    }
+    case 'close-entry':
+      session.selectedEntryUid = undefined;
+      renderManagerSheet(session.root, session);
+      return;
+    case 'new-entry':
+      void createSelectedEntry(session).catch(error => reportError('建立世界书条目失败', error));
+      return;
+    case 'save-entry':
+      void saveSelectedEntry(session).catch(error => reportError('保存世界书条目失败', error));
+      return;
+    case 'delete-entry':
+      void deleteSelectedEntry(session).catch(error => reportError('删除世界书条目失败', error));
       return;
     case 'create-folder':
       void createFolderFromPrompt(session).catch(error => reportError('建立 Folder 失败', error));
@@ -182,7 +290,7 @@ function handleClick(session: UiSession, event: MouseEvent): void {
     case 'refresh':
       void runBusy(session, async () => {
         await refreshSession(session, true);
-        toastr.success('已重新读取 Tavern 状态', 'Worldbook Manager');
+        toastr.success('已重新读取 Tavern 状态', 'Worldbook Editor');
       }).catch(error => reportError('刷新失败', error));
       return;
   }
@@ -224,7 +332,11 @@ function mountManager(data: ManagerBootstrapResult): void {
     if (!session || session.root !== root || event.key !== 'Escape') return;
 
     if (session.selectedBookName) {
-      session.selectedBookName = undefined;
+      if (session.selectedEntryUid !== undefined) {
+        session.selectedEntryUid = undefined;
+      } else {
+        clearSelectedBook(session);
+      }
       renderManagerSheet(session.root, session);
     } else if (session.sidebarOpen) {
       session.sidebarOpen = false;
@@ -240,6 +352,7 @@ function mountManager(data: ManagerBootstrapResult): void {
     view,
     sidebarOpen: false,
     busy: false,
+    bookEntriesLoading: false,
     keydownHandler,
   };
 

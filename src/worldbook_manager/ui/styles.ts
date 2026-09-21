@@ -27,7 +27,8 @@ body.wbm-lock-scroll {
 
 #wbm-root button,
 #wbm-root input,
-#wbm-root select {
+#wbm-root select,
+#wbm-root textarea {
   font: inherit;
 }
 
@@ -221,6 +222,31 @@ body.wbm-lock-scroll {
   background: var(--wbm-bg);
 }
 
+#wbm-root .wbm-input,
+#wbm-root .wbm-textarea {
+  width: 100%;
+  border: 1px solid var(--wbm-border);
+  border-radius: 8px;
+  padding: 9px 10px;
+  color: var(--wbm-text);
+  background: var(--wbm-bg);
+  outline: none;
+}
+
+#wbm-root .wbm-input:focus,
+#wbm-root .wbm-textarea:focus {
+  border-color: var(--wbm-accent);
+}
+
+#wbm-root .wbm-textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+#wbm-root .wbm-content-editor {
+  min-height: 220px;
+}
+
 #wbm-root .wbm-bound-tabs,
 #wbm-root .wbm-tags {
   display: flex;
@@ -399,6 +425,88 @@ body.wbm-lock-scroll {
   height: 18px;
 }
 
+#wbm-root .wbm-inline-toggle {
+  margin: 12px 0;
+}
+
+#wbm-root .wbm-entry-section,
+#wbm-root .wbm-organize-section {
+  margin-top: 12px;
+}
+
+#wbm-root .wbm-organize-section {
+  margin-top: 26px;
+  padding-top: 8px;
+  border-top: 1px solid var(--wbm-border);
+}
+
+#wbm-root .wbm-entry-heading {
+  padding: 0;
+}
+
+#wbm-root .wbm-entry-list {
+  display: grid;
+  gap: 6px;
+}
+
+#wbm-root .wbm-entry-row {
+  width: 100%;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--wbm-border);
+  border-radius: 10px;
+  padding: 9px 10px;
+  color: inherit;
+  background: var(--wbm-panel-2);
+  text-align: left;
+  cursor: pointer;
+}
+
+#wbm-root .wbm-entry-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--wbm-muted);
+}
+
+#wbm-root .wbm-entry-status.is-enabled {
+  background: var(--wbm-accent);
+}
+
+#wbm-root .wbm-entry-main {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+#wbm-root .wbm-entry-main strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#wbm-root .wbm-back-button {
+  min-height: 40px;
+  border: 0;
+  padding: 0;
+  color: var(--wbm-accent);
+  background: transparent;
+  cursor: pointer;
+}
+
+#wbm-root .wbm-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+#wbm-root .wbm-field-grid-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 #wbm-root .wbm-sheet-actions {
   position: sticky;
   bottom: 0;
@@ -452,7 +560,8 @@ body.wbm-lock-scroll {
 
   #wbm-root button,
   #wbm-root input,
-  #wbm-root select {
+  #wbm-root select,
+  #wbm-root textarea {
     touch-action: manipulation;
   }
 
@@ -816,6 +925,21 @@ body.wbm-lock-scroll {
     flex: 1 1 0;
     min-height: 48px;
     border-radius: 12px;
+  }
+
+  #wbm-root .wbm-field-grid,
+  #wbm-root .wbm-field-grid-three {
+    grid-template-columns: 1fr;
+  }
+
+  #wbm-root .wbm-input,
+  #wbm-root .wbm-textarea {
+    border-radius: 11px;
+    font-size: 16px;
+  }
+
+  #wbm-root .wbm-content-editor {
+    min-height: 240px;
   }
 }
 

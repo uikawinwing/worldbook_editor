@@ -6,6 +6,7 @@ import {
   type ViewState,
 } from '../domain/views';
 import { type Folder, type ManagerState } from '../model';
+import type { EntryEditorDraft } from '../services/entries';
 import type { ManagerBootstrapResult } from '../services/manager';
 import { MANAGER_STYLES } from './styles';
 
@@ -15,6 +16,11 @@ export type ManagerUiModel = {
   data: ManagerBootstrapResult;
   view: ViewState;
   selectedBookName?: string;
+  bookEntries?: WorldbookEntry[];
+  bookEntriesFor?: string;
+  bookEntriesLoading: boolean;
+  bookEntriesError?: string;
+  selectedEntryUid?: number;
   sidebarOpen: boolean;
   busy: boolean;
 };
@@ -262,6 +268,113 @@ function selectedBook(model: ManagerUiModel): LorebookSummary | undefined {
     : undefined;
 }
 
+function selectedEntry(model: ManagerUiModel): WorldbookEntry | undefined {
+  if (model.selectedEntryUid === undefined || model.bookEntriesFor !== model.selectedBookName) {
+    return undefined;
+  }
+  return model.bookEntries?.find(entry => entry.uid === model.selectedEntryUid);
+}
+
+function strategyKeyText(key: string | RegExp): string {
+  return key instanceof RegExp ? key.toString() : key;
+}
+
+function entryRow(entry: WorldbookEntry): string {
+  return `<button type="button" class="wbm-entry-row" data-action="open-entry" data-entry-uid="${entry.uid}">
+    <span class="wbm-entry-status ${entry.enabled ? 'is-enabled' : ''}" aria-hidden="true"></span>
+    <span class="wbm-entry-main">
+      <strong>${escapeHtml(entry.name || '未命名条目')}</strong>
+      <span class="wbm-sheet-note">${escapeHtml(entry.strategy.type)} · order ${entry.position.order} · ${entry.probability}%</span>
+    </span>
+    <span class="wbm-chevron">›</span>
+  </button>`;
+}
+
+function renderEntryEditor(entry: WorldbookEntry): string {
+  const strategyOptions = ['constant', 'selective', 'vectorized']
+    .map(
+      value =>
+        `<option value="${value}"${entry.strategy.type === value ? ' selected' : ''}>${value}</option>`,
+    )
+    .join('');
+  const positionOptions: WorldbookEntry['position']['type'][] = [
+    'before_character_definition',
+    'after_character_definition',
+    'before_example_messages',
+    'after_example_messages',
+    'before_author_note',
+    'after_author_note',
+    'at_depth',
+    'outlet',
+  ];
+  const roleOptions: WorldbookEntry['position']['role'][] = ['system', 'assistant', 'user'];
+
+  return `
+    <div class="wbm-entry-editor">
+      <button type="button" class="wbm-back-button" data-action="close-entry">‹ 返回条目列表</button>
+      <div class="wbm-field">
+        <label>条目名称</label>
+        <input class="wbm-input" data-role="entry-name" value="${attr(entry.name)}">
+      </div>
+      <label class="wbm-checkbox-row wbm-inline-toggle">
+        <input type="checkbox" data-role="entry-enabled"${entry.enabled ? ' checked' : ''}>
+        <span>启用条目</span>
+      </label>
+      <div class="wbm-field">
+        <label>内容</label>
+        <textarea class="wbm-textarea wbm-content-editor" data-role="entry-content">${escapeHtml(entry.content)}</textarea>
+      </div>
+      <div class="wbm-field-grid">
+        <div class="wbm-field">
+          <label>激活类型</label>
+          <select class="wbm-select" data-role="entry-strategy">${strategyOptions}</select>
+        </div>
+        <div class="wbm-field">
+          <label>激活概率 %</label>
+          <input class="wbm-input" data-role="entry-probability" type="number" min="0" max="100" value="${entry.probability}">
+        </div>
+      </div>
+      <div class="wbm-field">
+        <label>Keys（每行一个；正则可写 /pattern/flags）</label>
+        <textarea class="wbm-textarea" data-role="entry-keys">${escapeHtml(
+          entry.strategy.keys.map(strategyKeyText).join('\n'),
+        )}</textarea>
+      </div>
+      <div class="wbm-field">
+        <label>插入位置</label>
+        <select class="wbm-select" data-role="entry-position">${positionOptions
+          .map(
+            value =>
+              `<option value="${value}"${entry.position.type === value ? ' selected' : ''}>${value}</option>`,
+          )
+          .join('')}</select>
+      </div>
+      <div class="wbm-field-grid wbm-field-grid-three">
+        <div class="wbm-field">
+          <label>Role</label>
+          <select class="wbm-select" data-role="entry-role">${roleOptions
+            .map(
+              value =>
+                `<option value="${value}"${entry.position.role === value ? ' selected' : ''}>${value}</option>`,
+            )
+            .join('')}</select>
+        </div>
+        <div class="wbm-field">
+          <label>Depth</label>
+          <input class="wbm-input" data-role="entry-depth" type="number" value="${entry.position.depth}">
+        </div>
+        <div class="wbm-field">
+          <label>Order</label>
+          <input class="wbm-input" data-role="entry-order" type="number" value="${entry.position.order}">
+        </div>
+      </div>
+      <div class="wbm-sheet-actions">
+        <button type="button" class="wbm-text-button is-danger" data-action="delete-entry">删除</button>
+        <button type="button" class="wbm-text-button is-primary" data-action="save-entry">保存条目</button>
+      </div>
+    </div>`;
+}
+
 function folderOptions(
   folders: readonly Folder[],
   selectedFolderId: string,
@@ -305,6 +418,27 @@ function renderSheet(root: HTMLElement, model: ManagerUiModel): void {
     )
     .join('');
 
+  const entry = selectedEntry(model);
+  const entryPanel = entry
+    ? renderEntryEditor(entry)
+    : model.bookEntriesLoading
+      ? '<div class="wbm-empty">正在读取世界书条目…</div>'
+      : model.bookEntriesError
+        ? `<div class="wbm-empty">${escapeHtml(model.bookEntriesError)}<br><button type="button" class="wbm-text-button" data-action="reload-book">重新读取</button></div>`
+        : model.bookEntriesFor === book.name
+          ? `<section class="wbm-entry-section">
+              <div class="wbm-section-heading wbm-entry-heading">
+                <span>Entries · ${model.bookEntries?.length ?? 0}</span>
+                <button type="button" class="wbm-text-button" data-action="new-entry">＋ 新增条目</button>
+              </div>
+              <div class="wbm-entry-list">${
+                model.bookEntries?.length
+                  ? model.bookEntries.map(entryRow).join('')
+                  : '<div class="wbm-empty">这本世界书还没有条目</div>'
+              }</div>
+            </section>`
+          : '<div class="wbm-empty">尚未读取世界书条目</div>';
+
   sheet.innerHTML = `
     <div class="wbm-sheet-header">
       <div class="wbm-sheet-title">
@@ -316,30 +450,36 @@ function renderSheet(root: HTMLElement, model: ManagerUiModel): void {
     ${
       book.inTrash
         ? '<div class="wbm-empty">回收站恢复与永久删除会在 Trash 里程碑接入</div>'
-        : `
-          <div class="wbm-field">
-            <label>Folder</label>
-            <select class="wbm-select" data-role="sheet-folder">
-              ${folderOptions(model.data.state.folders, book.folderId)}
-            </select>
-          </div>
-          <div class="wbm-field">
-            <div class="wbm-field-label">Tags</div>
-            <div class="wbm-checkbox-list">
-              ${tags || '<span class="wbm-sheet-note">还没有 Tag，可以先在 Manager 顶部建立</span>'}
+        : entry
+          ? entryPanel
+          : `
+          ${entryPanel}
+          <div class="wbm-organize-section">
+            <div class="wbm-section-heading wbm-entry-heading"><span>整理</span></div>
+            <div class="wbm-field">
+              <label>Folder</label>
+              <select class="wbm-select" data-role="sheet-folder">
+                ${folderOptions(model.data.state.folders, book.folderId)}
+              </select>
             </div>
-          </div>
-          <div class="wbm-field">
-            <div class="wbm-field-label">绑定</div>
-            <div class="wbm-sheet-note">${
-              bindings.length > 0
-                ? escapeHtml(bindings.join(' · '))
-                : '没有确认到 Character / Chat binding'
-            }</div>
-          </div>
-          <div class="wbm-sheet-actions">
-            <button type="button" class="wbm-text-button" data-action="close-sheet">取消</button>
-            <button type="button" class="wbm-text-button is-primary" data-action="save-book">保存</button>
+            <div class="wbm-field">
+              <div class="wbm-field-label">Tags</div>
+              <div class="wbm-checkbox-list">
+                ${tags || '<span class="wbm-sheet-note">还没有 Tag，可以先在 Editor 顶部建立</span>'}
+              </div>
+            </div>
+            <div class="wbm-field">
+              <div class="wbm-field-label">绑定</div>
+              <div class="wbm-sheet-note">${
+                bindings.length > 0
+                  ? escapeHtml(bindings.join(' · '))
+                  : '没有确认到 Character / Chat binding'
+              }</div>
+            </div>
+            <div class="wbm-sheet-actions">
+              <button type="button" class="wbm-text-button" data-action="close-sheet">取消</button>
+              <button type="button" class="wbm-text-button is-primary" data-action="save-book">保存整理信息</button>
+            </div>
           </div>
         `
     }
@@ -360,11 +500,11 @@ export function createManagerRoot(): HTMLDivElement {
   const root = document.createElement('div');
   root.id = 'wbm-root';
   root.innerHTML = `
-    <section class="wbm-shell" role="dialog" aria-modal="true" aria-label="Worldbook Manager">
+    <section class="wbm-shell" role="dialog" aria-modal="true" aria-label="Worldbook Editor">
       <header class="wbm-header">
         <button type="button" class="wbm-icon-button wbm-menu-button" data-action="toggle-sidebar" aria-label="打开导航">☰</button>
         <div class="wbm-title">
-          <strong>Worldbook Manager</strong>
+          <strong>Worldbook Editor</strong>
           <span data-role="library-summary"></span>
         </div>
         <div class="wbm-search-wrap">
@@ -446,4 +586,56 @@ export function readSheetOrganization(root: HTMLElement): {
     checkbox => checkbox.value,
   );
   return { folderId, tagIds };
+}
+
+function parseStrategyKey(value: string): string | RegExp {
+  const trimmed = value.trim();
+  if (!trimmed.startsWith('/')) return trimmed;
+
+  for (let slash = trimmed.length - 1; slash > 0; slash -= 1) {
+    if (trimmed[slash] !== '/' || trimmed[slash - 1] === '\\') continue;
+    const pattern = trimmed.slice(1, slash);
+    const flags = trimmed.slice(slash + 1);
+    if (!/^[dgimsuvy]*$/.test(flags)) return trimmed;
+    try {
+      return new RegExp(pattern, flags);
+    } catch {
+      return trimmed;
+    }
+  }
+  return trimmed;
+}
+
+function readNumber(root: HTMLElement, selector: string): number {
+  const value = Number(getElement<HTMLInputElement>(root, selector).value);
+  if (!Number.isFinite(value)) throw new Error(`无效数字：${selector}`);
+  return value;
+}
+
+export function readEntryEditorDraft(root: HTMLElement): EntryEditorDraft {
+  const probability = Math.min(
+    100,
+    Math.max(0, readNumber(root, '[data-role="entry-probability"]')),
+  );
+  const keys = getElement<HTMLTextAreaElement>(root, '[data-role="entry-keys"]')
+    .value.split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(parseStrategyKey);
+
+  return {
+    name: getElement<HTMLInputElement>(root, '[data-role="entry-name"]').value,
+    enabled: getElement<HTMLInputElement>(root, '[data-role="entry-enabled"]').checked,
+    content: getElement<HTMLTextAreaElement>(root, '[data-role="entry-content"]').value,
+    probability,
+    strategyType: getElement<HTMLSelectElement>(root, '[data-role="entry-strategy"]')
+      .value as EntryEditorDraft['strategyType'],
+    keys,
+    positionType: getElement<HTMLSelectElement>(root, '[data-role="entry-position"]')
+      .value as EntryEditorDraft['positionType'],
+    role: getElement<HTMLSelectElement>(root, '[data-role="entry-role"]')
+      .value as EntryEditorDraft['role'],
+    depth: readNumber(root, '[data-role="entry-depth"]'),
+    order: readNumber(root, '[data-role="entry-order"]'),
+  };
 }

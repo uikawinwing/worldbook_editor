@@ -16,6 +16,33 @@ export function readGlobalLorebookNames(): string[] {
   return uniqueNames(getGlobalWorldbookNames());
 }
 
+export function readLorebookEntries(worldbookName: string): Promise<WorldbookEntry[]> {
+  return getWorldbook(worldbookName);
+}
+
+export function updateLorebookEntries(
+  worldbookName: string,
+  updater: WorldbookUpdater,
+): Promise<WorldbookEntry[]> {
+  return updateWorldbookWith(worldbookName, updater, { render: 'immediate' });
+}
+
+export function createLorebookEntries(
+  worldbookName: string,
+  entries: TypeFest.PartialDeep<WorldbookEntry>[],
+): Promise<{ worldbook: WorldbookEntry[]; new_entries: WorldbookEntry[] }> {
+  return createWorldbookEntries(worldbookName, entries, { render: 'immediate' });
+}
+
+export function removeLorebookEntry(
+  worldbookName: string,
+  uid: number,
+): Promise<{ worldbook: WorldbookEntry[]; deleted_entries: WorldbookEntry[] }> {
+  return deleteWorldbookEntries(worldbookName, entry => entry.uid === uid, {
+    render: 'immediate',
+  });
+}
+
 export function readCharacterBindings(): CharacterBindingScan {
   const byBook = new Map<string, Set<string>>();
   const characters = uniqueNames(getCharacterNames());

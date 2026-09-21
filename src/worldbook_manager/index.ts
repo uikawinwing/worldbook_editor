@@ -1,7 +1,7 @@
 import { syncManagerState } from './services/state';
 import { destroyManagerUi, openManagerUi } from './ui/manager';
 
-const BUTTON_NAME = '世界书管理器';
+const BUTTON_NAME = '世界书编辑器';
 
 function reportError(context: string, error: unknown): void {
   console.error(`[Worldbook Manager] ${context}`, error);

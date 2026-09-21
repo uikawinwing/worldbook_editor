@@ -4,7 +4,7 @@
 
 ## 目标
 
-Phase 1 是 Lorebook Library / File Manager，不是 Entry Editor。优先解决 Folder、Tag、Smart View、批量整理与安全 Trash。
+当前产品同时承担 Lorebook Library / File Manager 与按需加载的 Entry Editor。列表层保持轻量；只有用户打开某一本世界书时才读取其条目。
 
 ## 当前模块
 
