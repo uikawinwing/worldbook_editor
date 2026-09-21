@@ -445,7 +445,7 @@ function renderSheet(root: HTMLElement, model: ManagerUiModel): void {
         <h2>${escapeHtml(book.displayName)}</h2>
         <div class="wbm-sheet-note">${escapeHtml(book.name)}</div>
       </div>
-      <button type="button" class="wbm-icon-button" data-action="close-sheet" aria-label="关闭">×</button>
+      <button type="button" class="wbm-icon-button" data-action="close-sheet" aria-label="返回世界书列表">←</button>
     </div>
     ${
       book.inTrash
@@ -504,7 +504,7 @@ export function createManagerRoot(): HTMLDivElement {
       <header class="wbm-header">
         <button type="button" class="wbm-icon-button wbm-menu-button" data-action="toggle-sidebar" aria-label="打开导航">☰</button>
         <div class="wbm-title">
-          <strong>Worldbook Editor</strong>
+          <strong>世界书编辑器</strong>
           <span data-role="library-summary"></span>
         </div>
         <div class="wbm-search-wrap">
@@ -525,6 +525,11 @@ export function createManagerRoot(): HTMLDivElement {
               <button type="button" class="wbm-text-button" data-action="create-folder">＋</button>
             </div>
             <div class="wbm-sidebar-list" data-role="folder-list"></div>
+          </section>
+          <section class="wbm-sidebar-section wbm-mobile-sidebar-actions">
+            <button type="button" class="wbm-nav-button" data-action="refresh">
+              <span class="wbm-nav-label">↻ 重新读取 Tavern</span>
+            </button>
           </section>
         </aside>
         <button type="button" class="wbm-sidebar-scrim" data-action="close-sidebar" aria-label="关闭导航"></button>

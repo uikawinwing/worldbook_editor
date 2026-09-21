@@ -15,6 +15,9 @@ body.wbm-lock-scroll {
   --wbm-danger: #ef6f6c;
   position: fixed;
   inset: 0;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
   z-index: 200000;
   color: var(--wbm-text);
   background: var(--wbm-bg);
@@ -537,7 +540,8 @@ body.wbm-lock-scroll {
   color: var(--wbm-danger);
 }
 
-#wbm-root .wbm-menu-button {
+#wbm-root .wbm-menu-button,
+#wbm-root .wbm-mobile-sidebar-actions {
   display: none;
 }
 
@@ -556,6 +560,8 @@ body.wbm-lock-scroll {
 
   #wbm-root .wbm-shell {
     height: 100dvh;
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
   }
 
   #wbm-root button,
@@ -567,16 +573,17 @@ body.wbm-lock-scroll {
 
   #wbm-root .wbm-header {
     min-height: 0;
-    grid-template-columns: 44px minmax(0, 1fr) 44px 44px;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
     grid-template-areas:
-      "menu title refresh close"
-      "search search search search";
-    gap: 8px;
+      "menu title close"
+      "search search search";
+    gap: 6px 8px;
     padding:
-      max(8px, env(safe-area-inset-top))
+      max(6px, env(safe-area-inset-top))
       max(10px, env(safe-area-inset-right))
-      10px
+      8px
       max(10px, env(safe-area-inset-left));
+    border-bottom: 1px solid var(--wbm-border);
     background: var(--wbm-panel);
   }
 
@@ -607,8 +614,12 @@ body.wbm-lock-scroll {
     grid-area: search;
   }
 
-  #wbm-root [data-action="refresh"] {
-    grid-area: refresh;
+  #wbm-root .wbm-header [data-action="refresh"] {
+    display: none;
+  }
+
+  #wbm-root .wbm-mobile-sidebar-actions {
+    display: block;
   }
 
   #wbm-root [data-action="close"] {
@@ -632,26 +643,31 @@ body.wbm-lock-scroll {
   }
 
   #wbm-root .wbm-search {
-    min-height: 46px;
-    border-radius: 12px;
-    padding: 0 14px;
+    min-height: 42px;
+    border-radius: 10px;
+    padding: 0 12px;
+    font-size: 16px;
     background: #0b1016;
   }
 
   #wbm-root .wbm-body {
+    min-height: 0;
     grid-template-columns: 1fr;
+    overflow: hidden;
   }
 
   #wbm-root .wbm-main {
+    min-height: 0;
     grid-template-rows: auto auto minmax(0, 1fr);
+    overflow: hidden;
     background: var(--wbm-bg);
   }
 
   #wbm-root .wbm-toolbar {
-    min-height: 54px;
+    min-height: 46px;
     flex-wrap: nowrap;
-    gap: 10px;
-    padding: 8px 12px;
+    gap: 8px;
+    padding: 5px 10px;
     background: var(--wbm-panel);
   }
 
@@ -660,13 +676,13 @@ body.wbm-lock-scroll {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 800;
   }
 
   #wbm-root .wbm-toolbar .wbm-select {
-    width: 112px;
-    min-width: 112px;
+    width: 96px;
+    min-width: 96px;
   }
 
   #wbm-root .wbm-select {
@@ -678,8 +694,9 @@ body.wbm-lock-scroll {
 
   #wbm-root .wbm-bound-tabs,
   #wbm-root .wbm-tags {
-    gap: 7px;
-    padding: 8px 12px 10px;
+    gap: 6px;
+    min-height: 40px;
+    padding: 4px 10px;
     border-bottom: 1px solid var(--wbm-border);
     background: var(--wbm-panel);
     overscroll-behavior-x: contain;
@@ -692,10 +709,15 @@ body.wbm-lock-scroll {
   }
 
   #wbm-root .wbm-chip {
-    min-height: 38px;
-    padding: 0 12px;
+    min-height: 32px;
+    padding: 0 10px;
     border-radius: 999px;
+    font-size: 12px;
     background: var(--wbm-panel-2);
+  }
+
+  #wbm-root .wbm-tags .wbm-book-raw {
+    display: none;
   }
 
   #wbm-root .wbm-chip.is-active {
@@ -707,29 +729,30 @@ body.wbm-lock-scroll {
   #wbm-root .wbm-list {
     display: grid;
     align-content: start;
-    gap: 8px;
+    gap: 5px;
+    min-height: 0;
     overflow-y: auto;
     overscroll-behavior-y: contain;
     padding:
-      10px
-      max(10px, env(safe-area-inset-right))
-      max(18px, env(safe-area-inset-bottom))
-      max(10px, env(safe-area-inset-left));
+      6px
+      max(8px, env(safe-area-inset-right))
+      max(14px, env(safe-area-inset-bottom))
+      max(8px, env(safe-area-inset-left));
     background: var(--wbm-bg);
   }
 
   #wbm-root .wbm-book-row {
-    min-height: 76px;
-    gap: 10px;
-    padding: 12px 12px 11px;
+    min-height: 60px;
+    gap: 8px;
+    padding: 8px 10px;
     border: 1px solid var(--wbm-border);
-    border-radius: 13px;
+    border-radius: 10px;
     background: var(--wbm-panel);
-    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
+    box-shadow: none;
   }
 
   #wbm-root .wbm-book-main {
-    gap: 6px;
+    gap: 4px;
   }
 
   #wbm-root .wbm-book-name {
@@ -847,44 +870,72 @@ body.wbm-lock-scroll {
 
   #wbm-root .wbm-sheet-layer {
     z-index: 5;
-    align-items: end;
+    align-items: stretch;
     justify-content: stretch;
-    background: rgba(0, 0, 0, 0.62);
-    backdrop-filter: blur(2px);
+    background: var(--wbm-panel);
+    backdrop-filter: none;
   }
 
   #wbm-root .wbm-sheet {
     position: relative;
     width: 100%;
-    height: auto;
-    max-height: min(86dvh, 760px);
-    padding: 26px 16px max(20px, env(safe-area-inset-bottom));
+    height: 100dvh;
+    max-height: none;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    padding:
+      0
+      max(12px, env(safe-area-inset-right))
+      max(16px, env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
     border: 0;
-    border-top: 1px solid var(--wbm-border);
-    border-radius: 20px 20px 0 0;
+    border-radius: 0;
     background: var(--wbm-panel);
-    box-shadow: 0 -18px 50px rgba(0, 0, 0, 0.34);
+    box-shadow: none;
   }
 
   #wbm-root .wbm-sheet::before {
-    content: "";
-    position: absolute;
-    top: 8px;
-    left: 50%;
-    width: 42px;
-    height: 4px;
-    border-radius: 999px;
-    transform: translateX(-50%);
-    background: rgba(255, 255, 255, 0.2);
+    display: none;
   }
 
   #wbm-root .wbm-sheet-header {
-    margin-bottom: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    margin: 0 -12px 8px;
+    padding:
+      max(6px, env(safe-area-inset-top))
+      8px
+      8px;
+    border-bottom: 1px solid var(--wbm-border);
+    background: var(--wbm-panel);
+  }
+
+  #wbm-root .wbm-sheet-header [data-action="close-sheet"] {
+    order: -1;
+    flex: 0 0 auto;
+  }
+
+  #wbm-root .wbm-sheet-title {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   #wbm-root .wbm-sheet-title h2 {
-    font-size: 17px;
-    line-height: 1.35;
+    font-size: 16px;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #wbm-root .wbm-sheet-title .wbm-sheet-note {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   #wbm-root .wbm-field {
@@ -914,11 +965,11 @@ body.wbm-lock-scroll {
   }
 
   #wbm-root .wbm-sheet-actions {
-    gap: 10px;
-    margin: 20px -16px -20px;
+    gap: 8px;
+    margin: 18px -12px -16px;
     padding:
-      12px 16px
-      max(12px, env(safe-area-inset-bottom));
+      10px 12px
+      max(10px, env(safe-area-inset-bottom));
   }
 
   #wbm-root .wbm-sheet-actions .wbm-text-button {
@@ -939,13 +990,18 @@ body.wbm-lock-scroll {
   }
 
   #wbm-root .wbm-content-editor {
-    min-height: 240px;
+    min-height: 42dvh;
+  }
+
+  #wbm-root .wbm-entry-row {
+    min-height: 54px;
+    border-radius: 9px;
   }
 }
 
 @media (max-width: 420px) {
   #wbm-root .wbm-header {
-    grid-template-columns: 42px minmax(0, 1fr) 42px 42px;
+    grid-template-columns: 42px minmax(0, 1fr) 42px;
   }
 
   #wbm-root .wbm-icon-button {
@@ -958,14 +1014,14 @@ body.wbm-lock-scroll {
   }
 
   #wbm-root .wbm-toolbar .wbm-select {
-    width: 104px;
-    min-width: 104px;
+    width: 90px;
+    min-width: 90px;
     font-size: 13px;
   }
 
   #wbm-root .wbm-book-row {
-    min-height: 72px;
-    padding: 11px;
+    min-height: 58px;
+    padding: 8px 9px;
   }
 }
 `;
