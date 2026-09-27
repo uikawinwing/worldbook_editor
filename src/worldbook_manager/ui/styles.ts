@@ -13,6 +13,8 @@ body.wbm-lock-scroll {
   --wbm-accent: #4ea6c8;
   --wbm-accent-soft: rgba(78, 166, 200, 0.16);
   --wbm-danger: #ef6f6c;
+  --wbm-success: #48bb78;
+  --wbm-switch-off: #39414f;
   position: fixed;
   inset: 0;
   width: 100%;
@@ -140,7 +142,8 @@ body.wbm-lock-scroll {
 #wbm-root .wbm-book-row:hover,
 #wbm-root .wbm-book-row:focus-visible {
   background: rgba(255, 255, 255, 0.06);
-  outline: none;
+  outline: 2px solid var(--wbm-accent);
+  outline-offset: 2px;
 }
 
 #wbm-root .wbm-search {
@@ -270,8 +273,11 @@ body.wbm-lock-scroll {
 }
 
 #wbm-root .wbm-input:focus,
-#wbm-root .wbm-textarea:focus {
+#wbm-root .wbm-textarea:focus,
+#wbm-root .wbm-select:focus,
+#wbm-root .wbm-search:focus {
   border-color: var(--wbm-accent);
+  box-shadow: 0 0 0 3px var(--wbm-accent-soft);
 }
 
 #wbm-root .wbm-textarea {
@@ -281,6 +287,25 @@ body.wbm-lock-scroll {
 
 #wbm-root .wbm-content-editor {
   min-height: 220px;
+}
+
+#wbm-root .wbm-content-reader {
+  min-height: 220px;
+  max-height: 62vh;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+  padding: 12px 13px;
+  border: 1px solid var(--wbm-border);
+  border-radius: 10px;
+  color: var(--wbm-text);
+  background: var(--wbm-bg);
+}
+
+#wbm-root .wbm-content-reader:focus-visible {
+  outline: 2px solid var(--wbm-accent);
+  outline-offset: 2px;
 }
 
 #wbm-root .wbm-bound-tabs,
@@ -441,6 +466,24 @@ body.wbm-lock-scroll {
   font-weight: 700;
 }
 
+#wbm-root .wbm-field-label-row {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#wbm-root .wbm-field-label-row label {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+#wbm-root .wbm-field-hint {
+  margin-left: auto;
+  color: var(--wbm-muted);
+  font-size: 11px;
+}
+
 #wbm-root .wbm-checkbox-list {
   display: grid;
   gap: 7px;
@@ -463,6 +506,66 @@ body.wbm-lock-scroll {
 
 #wbm-root .wbm-inline-toggle {
   margin: 12px 0;
+}
+
+#wbm-root .wbm-switch-field {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 6px 2px;
+  cursor: pointer;
+}
+
+#wbm-root .wbm-switch-copy {
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+#wbm-root .wbm-switch-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#wbm-root .wbm-switch-track {
+  width: 52px;
+  height: 32px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--wbm-switch-off);
+  transition: background 0.2s ease;
+}
+
+#wbm-root .wbm-switch-knob {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+  transform: translateX(0);
+  transition: transform 0.22s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+#wbm-root .wbm-switch-input:checked + .wbm-switch-track {
+  background: var(--wbm-success);
+}
+
+#wbm-root .wbm-switch-input:checked + .wbm-switch-track .wbm-switch-knob {
+  transform: translateX(20px);
+}
+
+#wbm-root .wbm-switch-input:focus-visible + .wbm-switch-track {
+  outline: 2px solid var(--wbm-accent);
+  outline-offset: 3px;
 }
 
 #wbm-root .wbm-entry-section,
@@ -531,6 +634,35 @@ body.wbm-lock-scroll {
   color: var(--wbm-accent);
   background: transparent;
   cursor: pointer;
+}
+
+#wbm-root .wbm-entry-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+#wbm-root .wbm-mode-toggle {
+  min-height: 38px;
+  margin-left: auto;
+  padding: 0 12px;
+  border: 1px solid var(--wbm-border);
+  border-radius: 999px;
+  color: var(--wbm-muted);
+  background: var(--wbm-panel-2);
+  cursor: pointer;
+}
+
+#wbm-root .wbm-mode-toggle[aria-pressed="true"] {
+  color: var(--wbm-accent);
+  border-color: rgba(78, 166, 200, 0.55);
+  background: var(--wbm-accent-soft);
+}
+
+#wbm-root .wbm-mode-toggle:focus-visible {
+  outline: 2px solid var(--wbm-accent);
+  outline-offset: 2px;
 }
 
 #wbm-root .wbm-field-grid {
@@ -1032,9 +1164,26 @@ body.wbm-lock-scroll {
     min-height: 42dvh;
   }
 
+  #wbm-root .wbm-content-reader {
+    min-height: 42dvh;
+    max-height: none;
+    font-size: 15px;
+  }
+
   #wbm-root .wbm-entry-row {
     min-height: 54px;
     border-radius: 9px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #wbm-root *,
+  #wbm-root *::before,
+  #wbm-root *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

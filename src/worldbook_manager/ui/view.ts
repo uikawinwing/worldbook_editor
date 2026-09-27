@@ -8,6 +8,7 @@ import {
 import { type Folder, type ManagerState } from '../model';
 import type { EntryEditorDraft } from '../services/entries';
 import type { ManagerBootstrapResult } from '../services/manager';
+import { attr, escapeHtml, renderModeToggle, renderSwitchField } from './primitives';
 import { MANAGER_STYLES } from './styles';
 
 const STYLE_ID = 'wbm-styles';
@@ -21,27 +22,10 @@ export type ManagerUiModel = {
   bookEntriesLoading: boolean;
   bookEntriesError?: string;
   selectedEntryUid?: number;
+  entryReadMode: boolean;
   sidebarOpen: boolean;
   busy: boolean;
 };
-
-function escapeHtml(value: string): string {
-  return value.replace(
-    /[&<>"']/g,
-    character =>
-      ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;',
-      })[character] ?? character,
-  );
-}
-
-function attr(value: string): string {
-  return escapeHtml(value);
-}
 
 function getElement<T extends Element>(
   root: ParentNode,
@@ -290,7 +274,7 @@ function entryRow(entry: WorldbookEntry): string {
   </button>`;
 }
 
-function renderEntryEditor(entry: WorldbookEntry): string {
+function renderEntryEditor(entry: WorldbookEntry, readMode: boolean): string {
   const strategyOptions = ['constant', 'selective', 'vectorized']
     .map(
       value =>
@@ -311,18 +295,30 @@ function renderEntryEditor(entry: WorldbookEntry): string {
 
   return `
     <div class="wbm-entry-editor">
-      <button type="button" class="wbm-back-button" data-action="close-entry">‹ 返回条目列表</button>
+      <div class="wbm-entry-toolbar">
+        <button type="button" class="wbm-back-button" data-action="close-entry">‹ 返回条目列表</button>
+        ${renderModeToggle({
+          action: 'toggle-entry-read-mode',
+          pressed: readMode,
+          idleLabel: '阅读模式',
+          activeLabel: '编辑模式',
+        })}
+      </div>
       <div class="wbm-field">
         <label>条目名称</label>
         <input class="wbm-input" data-role="entry-name" value="${attr(entry.name)}">
       </div>
-      <label class="wbm-checkbox-row wbm-inline-toggle">
-        <input type="checkbox" data-role="entry-enabled"${entry.enabled ? ' checked' : ''}>
-        <span>启用条目</span>
-      </label>
+      ${renderSwitchField({ role: 'entry-enabled', checked: entry.enabled, label: '启用条目' })}
       <div class="wbm-field">
-        <label>内容</label>
-        <textarea class="wbm-textarea wbm-content-editor" data-role="entry-content">${escapeHtml(entry.content)}</textarea>
+        <div class="wbm-field-label-row">
+          <label for="wbm-entry-content">内容</label>
+          <span class="wbm-field-hint">${entry.content.length.toLocaleString()} 字符</span>
+        </div>
+        <textarea id="wbm-entry-content" class="wbm-textarea wbm-content-editor" data-role="entry-content"${
+          readMode ? ' hidden' : ''
+        }>${escapeHtml(entry.content)}</textarea>
+        <article class="wbm-content-reader"${readMode ? '' : ' hidden'} tabindex="0" role="document"
+          aria-label="条目内容阅读视图">${escapeHtml(entry.content)}</article>
       </div>
       <div class="wbm-field-grid">
         <div class="wbm-field">
@@ -420,7 +416,7 @@ function renderSheet(root: HTMLElement, model: ManagerUiModel): void {
 
   const entry = selectedEntry(model);
   const entryPanel = entry
-    ? renderEntryEditor(entry)
+    ? renderEntryEditor(entry, model.entryReadMode)
     : model.bookEntriesLoading
       ? '<div class="wbm-empty">正在读取世界书条目…</div>'
       : model.bookEntriesError

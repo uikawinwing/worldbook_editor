@@ -3,6 +3,7 @@ import { UNFILED_FOLDER_ID } from '../model';
 import { createEntry, deleteEntry, loadLorebookEntries, updateEntry } from '../services/entries';
 import { createFolder, createTag, updateLorebookOrganization } from '../services/organize';
 import { bootstrapManager, type ManagerBootstrapResult } from '../services/manager';
+import { focusFirstWithin, trapTabWithin } from './focus';
 import {
   createManagerRoot,
   readEntryEditorDraft,
@@ -129,6 +130,17 @@ function clearSelectedBook(session: UiSession): void {
   session.bookEntriesError = undefined;
   session.bookEntriesLoading = false;
   session.selectedEntryUid = undefined;
+  session.entryReadMode = false;
+}
+
+function focusSheet(session: UiSession): void {
+  queueMicrotask(() => {
+    const sheet = session.root.querySelector<HTMLElement>('[data-role="sheet"]');
+    const layer = session.root.querySelector<HTMLElement>('[data-role="sheet-layer"]');
+    if (!sheet || !layer || layer.hidden) return;
+    sheet.tabIndex = -1;
+    focusFirstWithin(sheet);
+  });
 }
 
 async function loadSelectedBook(session: UiSession, bookName: string): Promise<void> {
@@ -163,6 +175,7 @@ async function createSelectedEntry(session: UiSession): Promise<void> {
     session.bookEntries = result.worldbook;
     session.bookEntriesFor = bookName;
     session.selectedEntryUid = result.entry.uid;
+    session.entryReadMode = false;
     toastr.success('条目已建立', 'Worldbook Editor');
   });
 }
@@ -241,7 +254,9 @@ function handleClick(session: UiSession, event: MouseEvent): void {
       session.bookEntriesFor = session.selectedBookName;
       session.bookEntriesError = undefined;
       session.selectedEntryUid = undefined;
+      session.entryReadMode = false;
       renderManagerSheet(session.root, session);
+      focusSheet(session);
       void loadSelectedBook(session, session.selectedBookName).catch(error =>
         reportError('读取世界书条目失败', error),
       );
@@ -262,13 +277,31 @@ function handleClick(session: UiSession, event: MouseEvent): void {
       const uid = Number(element.dataset.entryUid);
       if (!Number.isInteger(uid)) return;
       session.selectedEntryUid = uid;
+      session.entryReadMode = false;
       renderManagerSheet(session.root, session);
+      focusSheet(session);
       return;
     }
     case 'close-entry':
       session.selectedEntryUid = undefined;
+      session.entryReadMode = false;
       renderManagerSheet(session.root, session);
+      focusSheet(session);
       return;
+    case 'toggle-entry-read-mode': {
+      session.entryReadMode = !session.entryReadMode;
+      const textarea = session.root.querySelector<HTMLTextAreaElement>('[data-role="entry-content"]');
+      const reader = session.root.querySelector<HTMLElement>('.wbm-content-reader');
+      if (textarea && reader) {
+        reader.textContent = textarea.value;
+        textarea.hidden = session.entryReadMode;
+        reader.hidden = !session.entryReadMode;
+        element.setAttribute('aria-pressed', session.entryReadMode ? 'true' : 'false');
+        element.textContent = session.entryReadMode ? '编辑模式' : '阅读模式';
+        (session.entryReadMode ? reader : textarea).focus({ preventScroll: true });
+      }
+      return;
+    }
     case 'new-entry':
       void createSelectedEntry(session).catch(error => reportError('建立世界书条目失败', error));
       return;
@@ -329,7 +362,12 @@ function mountManager(data: ManagerBootstrapResult): void {
 
   const keydownHandler = (event: KeyboardEvent): void => {
     const session = activeSession;
-    if (!session || session.root !== root || event.key !== 'Escape') return;
+    if (!session || session.root !== root) return;
+
+    const sheet = session.root.querySelector<HTMLElement>('[data-role="sheet"]');
+    if (session.selectedBookName && sheet && trapTabWithin(sheet, event)) return;
+    if (!session.selectedBookName && trapTabWithin(session.root, event)) return;
+    if (event.key !== 'Escape') return;
 
     if (session.selectedBookName) {
       if (session.selectedEntryUid !== undefined) {
@@ -353,6 +391,7 @@ function mountManager(data: ManagerBootstrapResult): void {
     sidebarOpen: false,
     busy: false,
     bookEntriesLoading: false,
+    entryReadMode: false,
     keydownHandler,
   };
 
