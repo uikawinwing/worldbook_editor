@@ -1,12 +1,21 @@
+import { readOrganizationConfig } from '../domain/entry-organization';
 import { type SmartViewId, type ViewState } from '../domain/views';
 import { UNFILED_FOLDER_ID } from '../model';
-import { createEntry, deleteEntry, loadLorebookEntries, updateEntry } from '../services/entries';
+import {
+  createEntry,
+  createOrganizationConfig,
+  deleteEntry,
+  loadLorebookEntries,
+  updateEntry,
+  updateOrganizationConfig,
+} from '../services/entries';
 import { createFolder, createTag, updateLorebookOrganization } from '../services/organize';
 import { bootstrapManager, type ManagerBootstrapResult } from '../services/manager';
 import { focusFirstWithin, trapTabWithin } from './focus';
 import {
   createManagerRoot,
   readEntryEditorDraft,
+  readOrganizationRulesDraft,
   readSheetOrganization,
   renderManager,
   renderManagerList,
@@ -180,6 +189,41 @@ async function createSelectedEntry(session: UiSession): Promise<void> {
   });
 }
 
+async function createSelectedOrganizationRules(session: UiSession): Promise<void> {
+  const bookName = session.selectedBookName;
+  if (!bookName) return;
+
+  const existing = readOrganizationConfig(session.bookEntries ?? []).entry;
+  if (existing) {
+    session.selectedEntryUid = existing.uid;
+    renderManagerSheet(session.root, session);
+    focusSheet(session);
+    return;
+  }
+
+  await runBusy(session, async () => {
+    const result = await createOrganizationConfig(bookName);
+    session.bookEntries = result.worldbook;
+    session.bookEntriesFor = bookName;
+    session.selectedEntryUid = result.entry.uid;
+    session.entryReadMode = false;
+    toastr.success('已建立条目整理规则', 'Worldbook Editor');
+  });
+}
+
+async function saveSelectedOrganizationRules(session: UiSession): Promise<void> {
+  const bookName = session.selectedBookName;
+  const uid = session.selectedEntryUid;
+  if (!bookName || uid === undefined) return;
+
+  const content = readOrganizationRulesDraft(session.root);
+  await runBusy(session, async () => {
+    session.bookEntries = await updateOrganizationConfig(bookName, uid, content);
+    session.bookEntriesFor = bookName;
+    toastr.success('整理规则已保存', 'Worldbook Editor');
+  });
+}
+
 async function saveSelectedEntry(session: UiSession): Promise<void> {
   const bookName = session.selectedBookName;
   const uid = session.selectedEntryUid;
@@ -302,8 +346,23 @@ function handleClick(session: UiSession, event: MouseEvent): void {
       }
       return;
     }
+    case 'create-organization-rules':
+      void createSelectedOrganizationRules(session).catch(error => reportError('建立整理规则失败', error));
+      return;
+    case 'open-organization-rules': {
+      const entry = readOrganizationConfig(session.bookEntries ?? []).entry;
+      if (!entry) return;
+      session.selectedEntryUid = entry.uid;
+      session.entryReadMode = false;
+      renderManagerSheet(session.root, session);
+      focusSheet(session);
+      return;
+    }
     case 'new-entry':
       void createSelectedEntry(session).catch(error => reportError('建立世界书条目失败', error));
+      return;
+    case 'save-organization-rules':
+      void saveSelectedOrganizationRules(session).catch(error => reportError('保存整理规则失败', error));
       return;
     case 'save-entry':
       void saveSelectedEntry(session).catch(error => reportError('保存世界书条目失败', error));

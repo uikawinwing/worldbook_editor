@@ -588,6 +588,68 @@ body.wbm-lock-scroll {
   gap: 6px;
 }
 
+#wbm-root .wbm-entry-heading-actions {
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+#wbm-root .wbm-entry-group {
+  display: grid;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+#wbm-root .wbm-entry-group-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 2px;
+  color: var(--wbm-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+#wbm-root .wbm-entry-group-title span {
+  min-width: 22px;
+  padding: 2px 6px;
+  border: 1px solid var(--wbm-border);
+  border-radius: 999px;
+  text-align: center;
+  font-size: 10px;
+}
+
+#wbm-root .wbm-rule-warning {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(240, 173, 78, 0.45);
+  border-radius: 10px;
+  color: #f0c674;
+  background: rgba(240, 173, 78, 0.08);
+  font-size: 12px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+#wbm-root .wbm-rule-badge {
+  margin-left: auto;
+  padding: 5px 9px;
+  border: 1px solid var(--wbm-border);
+  border-radius: 999px;
+  color: var(--wbm-muted);
+  background: var(--wbm-panel-2);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+#wbm-root .wbm-rule-editor {
+  min-height: 42vh;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 #wbm-root .wbm-entry-row {
   width: 100%;
   min-height: 58px;

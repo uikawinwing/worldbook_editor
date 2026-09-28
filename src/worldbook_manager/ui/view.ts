@@ -5,6 +5,7 @@ import {
   type ViewSource,
   type ViewState,
 } from '../domain/views';
+import { isOrganizationConfigEntry, organizeEntries, readOrganizationConfig } from '../domain/entry-organization';
 import { type Folder, type ManagerState } from '../model';
 import type { EntryEditorDraft } from '../services/entries';
 import type { ManagerBootstrapResult } from '../services/manager';
@@ -263,15 +264,66 @@ function strategyKeyText(key: string | RegExp): string {
   return key instanceof RegExp ? key.toString() : key;
 }
 
-function entryRow(entry: WorldbookEntry): string {
+function entryRow(entry: WorldbookEntry, displayName = entry.name): string {
   return `<button type="button" class="wbm-entry-row" data-action="open-entry" data-entry-uid="${entry.uid}">
     <span class="wbm-entry-status ${entry.enabled ? 'is-enabled' : ''}" aria-hidden="true"></span>
     <span class="wbm-entry-main">
-      <strong>${escapeHtml(entry.name || '未命名条目')}</strong>
+      <strong>${escapeHtml(displayName || '未命名条目')}</strong>
       <span class="wbm-sheet-note">${escapeHtml(entry.strategy.type)} · order ${entry.position.order} · ${entry.probability}%</span>
     </span>
     <span class="wbm-chevron">›</span>
   </button>`;
+}
+
+function renderOrganizedEntries(entries: readonly WorldbookEntry[]): string {
+  const configState = readOrganizationConfig(entries);
+  const organized = organizeEntries(entries, configState.config);
+  const groups = new Map<string, typeof organized>();
+
+  for (const item of organized) {
+    const key = item.path.join('\u0000');
+    const group = groups.get(key) ?? [];
+    group.push(item);
+    groups.set(key, group);
+  }
+
+  const warning = configState.error
+    ? `<div class="wbm-rule-warning">整理规则无法解析，当前回退为未分类列表：${escapeHtml(configState.error)}</div>`
+    : '';
+
+  const sections = [...groups.entries()]
+    .map(([key, items]) => {
+      const path = key ? key.split('\u0000') : [];
+      const label = path.length > 0 ? path.join(' › ') : '未分类';
+      return `<section class="wbm-entry-group">
+        <div class="wbm-entry-group-title">${escapeHtml(label)} <span>${items.length}</span></div>
+        <div class="wbm-entry-list">${items.map(item => entryRow(item.entry, item.displayName)).join('')}</div>
+      </section>`;
+    })
+    .join('');
+
+  return `${warning}${sections || '<div class="wbm-empty">这本世界书还没有普通条目</div>'}`;
+}
+
+function renderOrganizationRuleEditor(entry: WorldbookEntry): string {
+  const state = readOrganizationConfig([entry]);
+  return `
+    <div class="wbm-entry-editor">
+      <div class="wbm-entry-toolbar">
+        <button type="button" class="wbm-back-button" data-action="close-entry">‹ 返回条目列表</button>
+        <span class="wbm-rule-badge">Metadata · Disabled</span>
+      </div>
+      <div class="wbm-field">
+        <label>条目整理规则（YAML）</label>
+        <textarea class="wbm-textarea wbm-rule-editor" data-role="organization-rules" spellcheck="false">${escapeHtml(entry.content)}</textarea>
+        <span class="wbm-sheet-note">按顺序尝试 rules。source 可用 name / content；match 负责定位；extract 可用 all 或 groups 抽取分类路径。此条目保存时会强制保持禁用，不发送给 LLM。</span>
+      </div>
+      ${state.error ? `<div class="wbm-rule-warning">${escapeHtml(state.error)}</div>` : ''}
+      <div class="wbm-sheet-actions">
+        <button type="button" class="wbm-text-button is-danger" data-action="delete-entry">删除规则</button>
+        <button type="button" class="wbm-text-button is-primary" data-action="save-organization-rules">保存规则</button>
+      </div>
+    </div>`;
 }
 
 function renderEntryEditor(entry: WorldbookEntry, readMode: boolean): string {
@@ -415,8 +467,12 @@ function renderSheet(root: HTMLElement, model: ManagerUiModel): void {
     .join('');
 
   const entry = selectedEntry(model);
+  const configState = readOrganizationConfig(model.bookEntries ?? []);
+  const ordinaryEntryCount = (model.bookEntries ?? []).filter(item => !isOrganizationConfigEntry(item)).length;
   const entryPanel = entry
-    ? renderEntryEditor(entry, model.entryReadMode)
+    ? isOrganizationConfigEntry(entry)
+      ? renderOrganizationRuleEditor(entry)
+      : renderEntryEditor(entry, model.entryReadMode)
     : model.bookEntriesLoading
       ? '<div class="wbm-empty">正在读取世界书条目…</div>'
       : model.bookEntriesError
@@ -424,14 +480,15 @@ function renderSheet(root: HTMLElement, model: ManagerUiModel): void {
         : model.bookEntriesFor === book.name
           ? `<section class="wbm-entry-section">
               <div class="wbm-section-heading wbm-entry-heading">
-                <span>Entries · ${model.bookEntries?.length ?? 0}</span>
-                <button type="button" class="wbm-text-button" data-action="new-entry">＋ 新增条目</button>
+                <span>Entries · ${ordinaryEntryCount}</span>
+                <span class="wbm-entry-heading-actions">
+                  <button type="button" class="wbm-text-button" data-action="${configState.entry ? 'open-organization-rules' : 'create-organization-rules'}">
+                    ${configState.entry ? '⚙ 整理规则' : '＋ 整理规则'}
+                  </button>
+                  <button type="button" class="wbm-text-button" data-action="new-entry">＋ 新增条目</button>
+                </span>
               </div>
-              <div class="wbm-entry-list">${
-                model.bookEntries?.length
-                  ? model.bookEntries.map(entryRow).join('')
-                  : '<div class="wbm-empty">这本世界书还没有条目</div>'
-              }</div>
+              ${renderOrganizedEntries(model.bookEntries ?? [])}
             </section>`
           : '<div class="wbm-empty">尚未读取世界书条目</div>';
 
@@ -611,6 +668,10 @@ function readNumber(root: HTMLElement, selector: string): number {
   const value = Number(getElement<HTMLInputElement>(root, selector).value);
   if (!Number.isFinite(value)) throw new Error(`无效数字：${selector}`);
   return value;
+}
+
+export function readOrganizationRulesDraft(root: HTMLElement): string {
+  return getElement<HTMLTextAreaElement>(root, '[data-role="organization-rules"]').value;
 }
 
 export function readEntryEditorDraft(root: HTMLElement): EntryEditorDraft {

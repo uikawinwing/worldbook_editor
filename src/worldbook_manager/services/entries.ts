@@ -4,6 +4,12 @@ import {
   removeLorebookEntry,
   updateLorebookEntries,
 } from '../data/tavern';
+import {
+  organizationConfigEntryDraft,
+  organizationConfigExtra,
+  ORGANIZATION_RULE_ENTRY_NAME,
+  parseOrganizationConfig,
+} from '../domain/entry-organization';
 
 export type EntryEditorDraft = {
   name: string;
@@ -77,4 +83,39 @@ export async function deleteEntry(worldbookName: string, uid: number): Promise<W
   const result = await removeLorebookEntry(worldbookName, uid);
   if (result.deleted_entries.length === 0) throw new Error(`找不到世界书条目 uid=${uid}`);
   return result.worldbook;
+}
+
+export async function createOrganizationConfig(worldbookName: string): Promise<{
+  worldbook: WorldbookEntry[];
+  entry: WorldbookEntry;
+}> {
+  const result = await createLorebookEntries(worldbookName, [organizationConfigEntryDraft()]);
+  const entry = result.new_entries[0];
+  if (!entry) throw new Error('Tavern 没有返回整理规则条目');
+  return { worldbook: result.worldbook, entry };
+}
+
+export async function updateOrganizationConfig(
+  worldbookName: string,
+  uid: number,
+  content: string,
+): Promise<WorldbookEntry[]> {
+  parseOrganizationConfig(content);
+  let found = false;
+  const updated = await updateLorebookEntries(worldbookName, entries =>
+    entries.map(entry => {
+      if (entry.uid !== uid) return entry;
+      found = true;
+      return {
+        ...entry,
+        name: ORGANIZATION_RULE_ENTRY_NAME,
+        enabled: false,
+        probability: 0,
+        content,
+        extra: organizationConfigExtra(entry),
+      };
+    }),
+  );
+  if (!found) throw new Error(`找不到整理规则条目 uid=${uid}`);
+  return updated;
 }
