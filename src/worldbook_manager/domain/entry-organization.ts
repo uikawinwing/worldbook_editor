@@ -16,6 +16,13 @@ const extractGroupsSchema = z.object({
   groups: z.array(z.number().int().min(1)).min(1),
 });
 
+const ignoreRuleSchema = z.object({
+  id: z.string().min(1).optional(),
+  source: z.enum(['name', 'content']).default('name'),
+  match: z.string().min(1),
+  flags: z.string().default(''),
+});
+
 const organizationRuleSchema = z.object({
   id: z.string().min(1).optional(),
   source: z.enum(['name', 'content']).default('name'),
@@ -26,8 +33,18 @@ const organizationRuleSchema = z.object({
   stripMatch: z.boolean().default(false),
 });
 
+const DEFAULT_IGNORE_RULES = [
+  {
+    id: 'human-separator-arrows',
+    source: 'name' as const,
+    match: '^(?:\\[[^\\]]+\\])*\\s*➡️.*(?:开始|结束)\\s*$',
+    flags: '',
+  },
+];
+
 const organizationConfigSchema = z.object({
   version: z.literal(1),
+  ignoreRules: z.array(ignoreRuleSchema).default(DEFAULT_IGNORE_RULES),
   rules: z.array(organizationRuleSchema),
 });
 
@@ -47,6 +64,10 @@ export type OrganizedEntry = {
 };
 
 export const DEFAULT_ORGANIZATION_RULES_YAML = `version: 1
+ignoreRules:
+  - id: human-separator-arrows
+    source: name
+    match: '^(?:\\[[^\\]]+\\])*\\s*➡️.*(?:开始|结束)\\s*$'
 rules:
   - id: tag-block-prefix
     source: name
@@ -76,8 +97,28 @@ export function isOrganizationConfigEntry(entry: WorldbookEntry): boolean {
   return entry.name === ORGANIZATION_RULE_ENTRY_NAME;
 }
 
+function sourceText(entry: WorldbookEntry, source: 'name' | 'content'): string {
+  return source === 'content' ? entry.content : entry.name;
+}
+
+function compileRegex(pattern: string, flags: string): RegExp {
+  return new RegExp(pattern, flags);
+}
+
 export function parseOrganizationConfig(content: string): OrganizationConfig {
   const config = organizationConfigSchema.parse(parse(content));
+
+  for (const [index, rule] of config.ignoreRules.entries()) {
+    try {
+      compileRegex(rule.match, rule.flags.replaceAll('g', ''));
+    } catch (error) {
+      throw new Error(
+        `忽略规则 ${rule.id ?? index + 1} 的正则无效：${error instanceof Error ? error.message : String(error)}`,
+        { cause: error },
+      );
+    }
+  }
+
   for (const [index, rule] of config.rules.entries()) {
     try {
       compileRegex(rule.match, rule.flags.replaceAll('g', ''));
@@ -85,7 +126,10 @@ export function parseOrganizationConfig(content: string): OrganizationConfig {
         compileRegex(rule.extract.pattern, rule.extract.flags);
       }
     } catch (error) {
-      throw new Error(`规则 ${rule.id ?? index + 1} 的正则无效：${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `整理规则 ${rule.id ?? index + 1} 的正则无效：${error instanceof Error ? error.message : String(error)}`,
+        { cause: error },
+      );
     }
   }
   return config;
@@ -106,12 +150,15 @@ export function readOrganizationConfig(entries: readonly WorldbookEntry[]): Orga
   }
 }
 
-function sourceText(entry: WorldbookEntry, source: 'name' | 'content'): string {
-  return source === 'content' ? entry.content : entry.name;
-}
-
-function compileRegex(pattern: string, flags: string): RegExp {
-  return new RegExp(pattern, flags);
+function shouldIgnoreEntry(entry: WorldbookEntry, config: OrganizationConfig): boolean {
+  return config.ignoreRules.some(rule => {
+    try {
+      const source = sourceText(entry, rule.source);
+      return compileRegex(rule.match, rule.flags.replaceAll('g', '')).test(source);
+    } catch {
+      return false;
+    }
+  });
 }
 
 function extractSegments(
@@ -166,23 +213,28 @@ export function organizeEntries(
   entries: readonly WorldbookEntry[],
   config: OrganizationConfig | undefined,
 ): OrganizedEntry[] {
-  return entries.filter(entry => !isOrganizationConfigEntry(entry)).map(entry => {
-    if (!config) return { entry, path: [], displayName: entry.name };
+  return entries
+    .filter(entry => !isOrganizationConfigEntry(entry))
+    .filter(entry => !config || !shouldIgnoreEntry(entry, config))
+    .map(entry => {
+      if (!config) return { entry, path: [], displayName: entry.name };
 
-    for (const rule of config.rules) {
-      try {
-        const organized = applyRule(entry, rule);
-        if (organized) return { entry, ...organized };
-      } catch {
-        continue;
+      for (const rule of config.rules) {
+        try {
+          const organized = applyRule(entry, rule);
+          if (organized) return { entry, ...organized };
+        } catch {
+          continue;
+        }
       }
-    }
 
-    return { entry, path: [], displayName: entry.name };
-  });
+      return { entry, path: [], displayName: entry.name };
+    });
 }
 
-export function organizationConfigEntryDraft(content = DEFAULT_ORGANIZATION_RULES_YAML): TypeFest.PartialDeep<WorldbookEntry> {
+export function organizationConfigEntryDraft(
+  content = DEFAULT_ORGANIZATION_RULES_YAML,
+): TypeFest.PartialDeep<WorldbookEntry> {
   return {
     name: ORGANIZATION_RULE_ENTRY_NAME,
     enabled: false,

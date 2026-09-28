@@ -276,61 +276,139 @@ function entryRow(entry: WorldbookEntry, displayName = entry.name): string {
   </button>`;
 }
 
+type EntryTreeNode = {
+  segment: string;
+  path: string[];
+  directEntries: ReturnType<typeof organizeEntries>;
+  children: Map<string, EntryTreeNode>;
+};
+
+function buildEntryTree(items: ReturnType<typeof organizeEntries>): EntryTreeNode {
+  const root: EntryTreeNode = {
+    segment: '',
+    path: [],
+    directEntries: [],
+    children: new Map(),
+  };
+
+  for (const item of items) {
+    if (item.path.length === 0) {
+      root.directEntries.push(item);
+      continue;
+    }
+
+    let node = root;
+    for (const segment of item.path) {
+      let child = node.children.get(segment);
+      if (!child) {
+        child = {
+          segment,
+          path: [...node.path, segment],
+          directEntries: [],
+          children: new Map(),
+        };
+        node.children.set(segment, child);
+      }
+      node = child;
+    }
+    node.directEntries.push(item);
+  }
+
+  return root;
+}
+
+function collectTreeEntries(node: EntryTreeNode): ReturnType<typeof organizeEntries> {
+  return [
+    ...node.directEntries,
+    ...[...node.children.values()].flatMap(child => collectTreeEntries(child)),
+  ];
+}
+
+function renderTreeNode(
+  node: EntryTreeNode,
+  collapsedEntryGroups: ReadonlySet<string>,
+  labelOverride?: string,
+): string {
+  const key = node.path.join('\u0000');
+  const encodedKey = encodeURIComponent(key);
+  const label = labelOverride ?? node.segment;
+  const items = collectTreeEntries(node);
+  const collapsed = collapsedEntryGroups.has(key);
+  const enabledCount = items.filter(item => item.entry.enabled).length;
+  const state = enabledCount === 0 ? 'false' : enabledCount === items.length ? 'true' : 'mixed';
+  const stateLabel =
+    state === 'true'
+      ? '全部已启用'
+      : state === 'false'
+        ? '全部已禁用'
+        : `部分启用 ${enabledCount}/${items.length}`;
+
+  const directEntries =
+    node.directEntries.length > 0
+      ? `<div class="wbm-entry-list">${node.directEntries
+          .map(item => entryRow(item.entry, item.displayName))
+          .join('')}</div>`
+      : '';
+  const children = [...node.children.values()]
+    .map(child => renderTreeNode(child, collapsedEntryGroups))
+    .join('');
+
+  return `<section class="wbm-entry-group${collapsed ? ' is-collapsed' : ''}">
+    <div class="wbm-entry-group-header">
+      <button type="button" class="wbm-entry-group-toggle" data-action="toggle-entry-group"
+        data-group-key="${attr(encodedKey)}" aria-expanded="${collapsed ? 'false' : 'true'}">
+        <span class="wbm-entry-group-chevron" aria-hidden="true">›</span>
+        <span class="wbm-entry-group-title">${escapeHtml(label)} <span>${items.length}</span></span>
+      </button>
+      <button type="button" class="wbm-group-switch" role="checkbox" aria-checked="${state}"
+        aria-label="${escapeHtml(label)}：${stateLabel}" title="${stateLabel}"
+        data-action="toggle-entry-group-enabled" data-group-key="${attr(encodedKey)}">
+        <span class="wbm-group-switch-track" aria-hidden="true"><span class="wbm-group-switch-knob"></span></span>
+      </button>
+    </div>
+    <div class="wbm-entry-group-body">
+      ${directEntries}
+      ${children ? `<div class="wbm-entry-group-children">${children}</div>` : ''}
+    </div>
+  </section>`;
+}
+
 function renderOrganizedEntries(
   entries: readonly WorldbookEntry[],
   collapsedEntryGroups: ReadonlySet<string>,
 ): string {
   const configState = readOrganizationConfig(entries);
   const organized = organizeEntries(entries, configState.config);
-  const groups = new Map<string, typeof organized>();
-
-  for (const item of organized) {
-    const key = item.path.join('\u0000');
-    const group = groups.get(key) ?? [];
-    group.push(item);
-    groups.set(key, group);
-  }
+  const tree = buildEntryTree(organized);
 
   const warning = configState.error
     ? `<div class="wbm-rule-warning">整理规则无法解析，当前回退为未分类列表：${escapeHtml(configState.error)}</div>`
     : '';
 
-  const sections = [...groups.entries()]
-    .map(([key, items]) => {
-      const path = key ? key.split('\u0000') : [];
-      const label = path.length > 0 ? path.join(' › ') : '未分类';
-      const collapsed = collapsedEntryGroups.has(key);
-      const enabledCount = items.filter(item => item.entry.enabled).length;
-      const state = enabledCount === 0 ? 'false' : enabledCount === items.length ? 'true' : 'mixed';
-      const encodedKey = encodeURIComponent(key);
-      const stateLabel =
-        state === 'true' ? '全部已启用' : state === 'false' ? '全部已禁用' : `部分启用 ${enabledCount}/${items.length}`;
-
-      return `<section class="wbm-entry-group${collapsed ? ' is-collapsed' : ''}">
-        <div class="wbm-entry-group-header">
-          <button type="button" class="wbm-entry-group-toggle" data-action="toggle-entry-group"
-            data-group-key="${attr(encodedKey)}" aria-expanded="${collapsed ? 'false' : 'true'}">
-            <span class="wbm-entry-group-chevron" aria-hidden="true">›</span>
-            <span class="wbm-entry-group-title">${escapeHtml(label)} <span>${items.length}</span></span>
-          </button>
-          <button type="button" class="wbm-group-switch" role="checkbox" aria-checked="${state}"
-            aria-label="${escapeHtml(label)}：${stateLabel}" title="${stateLabel}"
-            data-action="toggle-entry-group-enabled" data-group-key="${attr(encodedKey)}">
-            <span class="wbm-group-switch-track" aria-hidden="true"><span class="wbm-group-switch-knob"></span></span>
-          </button>
-        </div>
-        <div class="wbm-entry-list"${collapsed ? ' hidden' : ''}>
-          ${items.map(item => entryRow(item.entry, item.displayName)).join('')}
-        </div>
-      </section>`;
-    })
+  const unclassified =
+    tree.directEntries.length > 0
+      ? renderTreeNode(
+          {
+            segment: '',
+            path: [],
+            directEntries: tree.directEntries,
+            children: new Map(),
+          },
+          collapsedEntryGroups,
+          '未分类',
+        )
+      : '';
+  const folders = [...tree.children.values()]
+    .map(node => renderTreeNode(node, collapsedEntryGroups))
     .join('');
+  const sections = `${unclassified}${folders}`;
 
-  return `${warning}${sections || '<div class="wbm-empty">这本世界书还没有普通条目</div>'}`;
+  return `${warning}${sections || '<div class="wbm-empty">这本世界书还没有可显示的条目</div>'}`;
 }
 
 function renderOrganizationRuleEditor(entry: WorldbookEntry): string {
   const state = readOrganizationConfig([entry]);
+  const usesDefaultIgnoreRules = !/^\\s*ignoreRules\\s*:/m.test(entry.content);
   return `
     <div class="wbm-entry-editor">
       <div class="wbm-entry-toolbar">
@@ -340,7 +418,12 @@ function renderOrganizationRuleEditor(entry: WorldbookEntry): string {
       <div class="wbm-field">
         <label>条目整理规则（YAML）</label>
         <textarea class="wbm-textarea wbm-rule-editor" data-role="organization-rules" spellcheck="false">${escapeHtml(entry.content)}</textarea>
-        <span class="wbm-sheet-note">按顺序尝试 rules。source 可用 name / content；match 负责定位；extract 可用 all 或 groups 抽取分类路径。此条目保存时会强制保持禁用，不发送给 LLM。</span>
+        <span class="wbm-sheet-note">ignoreRules 会先隐藏不需要管理的条目；rules 再按顺序整理其余条目。source 可用 name / content；match 负责匹配；extract 可用 all 或 groups 抽取分类路径。此 metadata 条目保存时会强制保持禁用，不发送给 LLM。</span>
+        ${
+          usesDefaultIgnoreRules
+            ? '<span class="wbm-sheet-note">这份旧配置没有显式写 ignoreRules，目前自动使用默认「➡️…开始 / ➡️…结束」分隔符规则；加入 ignoreRules: [] 可关闭。</span>'
+            : ''
+        }
       </div>
       ${state.error ? `<div class="wbm-rule-warning">${escapeHtml(state.error)}</div>` : ''}
       <div class="wbm-sheet-actions">
@@ -492,7 +575,7 @@ function renderSheet(root: HTMLElement, model: ManagerUiModel): void {
 
   const entry = selectedEntry(model);
   const configState = readOrganizationConfig(model.bookEntries ?? []);
-  const ordinaryEntryCount = (model.bookEntries ?? []).filter(item => !isOrganizationConfigEntry(item)).length;
+  const ordinaryEntryCount = organizeEntries(model.bookEntries ?? [], configState.config).length;
   const entryPanel = entry
     ? isOrganizationConfigEntry(entry)
       ? renderOrganizationRuleEditor(entry)

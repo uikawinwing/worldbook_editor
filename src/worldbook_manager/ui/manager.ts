@@ -242,8 +242,16 @@ async function saveSelectedEntry(session: UiSession): Promise<void> {
 function entriesInOrganizationGroup(session: UiSession, groupKey: string): WorldbookEntry[] {
   const entries = session.bookEntries ?? [];
   const config = readOrganizationConfig(entries).config;
+  const groupPath = groupKey ? groupKey.split('\u0000') : [];
+
   return organizeEntries(entries, config)
-    .filter(item => item.path.join('\u0000') === groupKey)
+    .filter(item => {
+      if (groupPath.length === 0) return item.path.length === 0;
+      return (
+        item.path.length >= groupPath.length &&
+        groupPath.every((segment, index) => item.path[index] === segment)
+      );
+    })
     .map(item => item.entry);
 }
 

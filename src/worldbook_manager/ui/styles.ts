@@ -635,8 +635,25 @@ body.wbm-lock-scroll {
   transform: rotate(0deg);
 }
 
-#wbm-root .wbm-entry-group.is-collapsed .wbm-entry-list {
+#wbm-root .wbm-entry-group-body {
+  display: grid;
+  gap: 7px;
+}
+
+#wbm-root .wbm-entry-group.is-collapsed > .wbm-entry-group-body {
   display: none;
+}
+
+#wbm-root .wbm-entry-group-children {
+  display: grid;
+  gap: 7px;
+  margin-left: 14px;
+  padding-left: 10px;
+  border-left: 1px solid var(--wbm-border);
+}
+
+#wbm-root .wbm-entry-group-children > .wbm-entry-group {
+  margin-top: 0;
 }
 
 #wbm-root .wbm-entry-group-title {
