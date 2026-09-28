@@ -85,6 +85,17 @@ export async function deleteEntry(worldbookName: string, uid: number): Promise<W
   return result.worldbook;
 }
 
+export function setEntriesEnabled(
+  worldbookName: string,
+  uids: readonly number[],
+  enabled: boolean,
+): Promise<WorldbookEntry[]> {
+  const targets = new Set(uids);
+  return updateLorebookEntries(worldbookName, entries =>
+    entries.map(entry => (targets.has(entry.uid) ? { ...entry, enabled } : entry)),
+  );
+}
+
 export async function createOrganizationConfig(worldbookName: string): Promise<{
   worldbook: WorldbookEntry[];
   entry: WorldbookEntry;

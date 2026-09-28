@@ -1,4 +1,4 @@
-import { readOrganizationConfig } from '../domain/entry-organization';
+import { organizeEntries, readOrganizationConfig } from '../domain/entry-organization';
 import { type SmartViewId, type ViewState } from '../domain/views';
 import { UNFILED_FOLDER_ID } from '../model';
 import {
@@ -6,6 +6,7 @@ import {
   createOrganizationConfig,
   deleteEntry,
   loadLorebookEntries,
+  setEntriesEnabled,
   updateEntry,
   updateOrganizationConfig,
 } from '../services/entries';
@@ -140,6 +141,7 @@ function clearSelectedBook(session: UiSession): void {
   session.bookEntriesLoading = false;
   session.selectedEntryUid = undefined;
   session.entryReadMode = false;
+  session.collapsedEntryGroups.clear();
 }
 
 function focusSheet(session: UiSession): void {
@@ -237,6 +239,36 @@ async function saveSelectedEntry(session: UiSession): Promise<void> {
   });
 }
 
+function entriesInOrganizationGroup(session: UiSession, groupKey: string): WorldbookEntry[] {
+  const entries = session.bookEntries ?? [];
+  const config = readOrganizationConfig(entries).config;
+  return organizeEntries(entries, config)
+    .filter(item => item.path.join('\u0000') === groupKey)
+    .map(item => item.entry);
+}
+
+async function toggleOrganizationGroupEnabled(session: UiSession, groupKey: string): Promise<void> {
+  const bookName = session.selectedBookName;
+  if (!bookName) return;
+
+  const entries = entriesInOrganizationGroup(session, groupKey);
+  if (entries.length === 0) return;
+  const enable = !entries.every(entry => entry.enabled);
+
+  await runBusy(session, async () => {
+    session.bookEntries = await setEntriesEnabled(
+      bookName,
+      entries.map(entry => entry.uid),
+      enable,
+    );
+    session.bookEntriesFor = bookName;
+    toastr.success(
+      `已${enable ? '启用' : '禁用'}该组 ${entries.length} 个条目`,
+      'Worldbook Editor',
+    );
+  });
+}
+
 async function deleteSelectedEntry(session: UiSession): Promise<void> {
   const bookName = session.selectedBookName;
   const uid = session.selectedEntryUid;
@@ -299,6 +331,7 @@ function handleClick(session: UiSession, event: MouseEvent): void {
       session.bookEntriesError = undefined;
       session.selectedEntryUid = undefined;
       session.entryReadMode = false;
+      session.collapsedEntryGroups.clear();
       renderManagerSheet(session.root, session);
       focusSheet(session);
       void loadSelectedBook(session, session.selectedBookName).catch(error =>
@@ -332,6 +365,27 @@ function handleClick(session: UiSession, event: MouseEvent): void {
       renderManagerSheet(session.root, session);
       focusSheet(session);
       return;
+    case 'toggle-entry-group': {
+      const encodedKey = element.dataset.groupKey;
+      if (encodedKey === undefined) return;
+      const groupKey = decodeURIComponent(encodedKey);
+      if (session.collapsedEntryGroups.has(groupKey)) {
+        session.collapsedEntryGroups.delete(groupKey);
+      } else {
+        session.collapsedEntryGroups.add(groupKey);
+      }
+      renderManagerSheet(session.root, session);
+      return;
+    }
+    case 'toggle-entry-group-enabled': {
+      const encodedKey = element.dataset.groupKey;
+      if (encodedKey === undefined) return;
+      const groupKey = decodeURIComponent(encodedKey);
+      void toggleOrganizationGroupEnabled(session, groupKey).catch(error =>
+        reportError('批量切换分组状态失败', error),
+      );
+      return;
+    }
     case 'toggle-entry-read-mode': {
       session.entryReadMode = !session.entryReadMode;
       const textarea = session.root.querySelector<HTMLTextAreaElement>('[data-role="entry-content"]');
@@ -451,6 +505,7 @@ function mountManager(data: ManagerBootstrapResult): void {
     busy: false,
     bookEntriesLoading: false,
     entryReadMode: false,
+    collapsedEntryGroups: new Set<string>(),
     keydownHandler,
   };
 

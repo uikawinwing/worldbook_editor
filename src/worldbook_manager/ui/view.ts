@@ -24,6 +24,7 @@ export type ManagerUiModel = {
   bookEntriesError?: string;
   selectedEntryUid?: number;
   entryReadMode: boolean;
+  collapsedEntryGroups: Set<string>;
   sidebarOpen: boolean;
   busy: boolean;
 };
@@ -275,7 +276,10 @@ function entryRow(entry: WorldbookEntry, displayName = entry.name): string {
   </button>`;
 }
 
-function renderOrganizedEntries(entries: readonly WorldbookEntry[]): string {
+function renderOrganizedEntries(
+  entries: readonly WorldbookEntry[],
+  collapsedEntryGroups: ReadonlySet<string>,
+): string {
   const configState = readOrganizationConfig(entries);
   const organized = organizeEntries(entries, configState.config);
   const groups = new Map<string, typeof organized>();
@@ -295,9 +299,29 @@ function renderOrganizedEntries(entries: readonly WorldbookEntry[]): string {
     .map(([key, items]) => {
       const path = key ? key.split('\u0000') : [];
       const label = path.length > 0 ? path.join(' › ') : '未分类';
-      return `<section class="wbm-entry-group">
-        <div class="wbm-entry-group-title">${escapeHtml(label)} <span>${items.length}</span></div>
-        <div class="wbm-entry-list">${items.map(item => entryRow(item.entry, item.displayName)).join('')}</div>
+      const collapsed = collapsedEntryGroups.has(key);
+      const enabledCount = items.filter(item => item.entry.enabled).length;
+      const state = enabledCount === 0 ? 'false' : enabledCount === items.length ? 'true' : 'mixed';
+      const encodedKey = encodeURIComponent(key);
+      const stateLabel =
+        state === 'true' ? '全部已启用' : state === 'false' ? '全部已禁用' : `部分启用 ${enabledCount}/${items.length}`;
+
+      return `<section class="wbm-entry-group${collapsed ? ' is-collapsed' : ''}">
+        <div class="wbm-entry-group-header">
+          <button type="button" class="wbm-entry-group-toggle" data-action="toggle-entry-group"
+            data-group-key="${attr(encodedKey)}" aria-expanded="${collapsed ? 'false' : 'true'}">
+            <span class="wbm-entry-group-chevron" aria-hidden="true">›</span>
+            <span class="wbm-entry-group-title">${escapeHtml(label)} <span>${items.length}</span></span>
+          </button>
+          <button type="button" class="wbm-group-switch" role="checkbox" aria-checked="${state}"
+            aria-label="${escapeHtml(label)}：${stateLabel}" title="${stateLabel}"
+            data-action="toggle-entry-group-enabled" data-group-key="${attr(encodedKey)}">
+            <span class="wbm-group-switch-track" aria-hidden="true"><span class="wbm-group-switch-knob"></span></span>
+          </button>
+        </div>
+        <div class="wbm-entry-list"${collapsed ? ' hidden' : ''}>
+          ${items.map(item => entryRow(item.entry, item.displayName)).join('')}
+        </div>
       </section>`;
     })
     .join('');
@@ -488,7 +512,7 @@ function renderSheet(root: HTMLElement, model: ManagerUiModel): void {
                   <button type="button" class="wbm-text-button" data-action="new-entry">＋ 新增条目</button>
                 </span>
               </div>
-              ${renderOrganizedEntries(model.bookEntries ?? [])}
+              ${renderOrganizedEntries(model.bookEntries ?? [], model.collapsedEntryGroups)}
             </section>`
           : '<div class="wbm-empty">尚未读取世界书条目</div>';
 

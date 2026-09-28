@@ -601,11 +601,49 @@ body.wbm-lock-scroll {
   margin-top: 12px;
 }
 
-#wbm-root .wbm-entry-group-title {
+#wbm-root .wbm-entry-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+}
+
+#wbm-root .wbm-entry-group-toggle {
+  min-width: 0;
+  flex: 1 1 auto;
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 0 2px;
+  padding: 7px 2px;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+#wbm-root .wbm-entry-group-chevron {
+  flex: 0 0 auto;
+  color: var(--wbm-muted);
+  font-size: 20px;
+  line-height: 1;
+  transform: rotate(90deg);
+  transition: transform 0.16s ease;
+}
+
+#wbm-root .wbm-entry-group.is-collapsed .wbm-entry-group-chevron {
+  transform: rotate(0deg);
+}
+
+#wbm-root .wbm-entry-group.is-collapsed .wbm-entry-list {
+  display: none;
+}
+
+#wbm-root .wbm-entry-group-title {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
   color: var(--wbm-muted);
   font-size: 12px;
   font-weight: 700;
@@ -618,6 +656,62 @@ body.wbm-lock-scroll {
   border-radius: 999px;
   text-align: center;
   font-size: 10px;
+}
+
+#wbm-root .wbm-group-switch {
+  width: 52px;
+  height: 42px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+#wbm-root .wbm-group-switch-track {
+  position: relative;
+  width: 46px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--wbm-border);
+  transition: background 0.16s ease;
+}
+
+#wbm-root .wbm-group-switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.28);
+  transition: transform 0.16s ease;
+}
+
+#wbm-root .wbm-group-switch[aria-checked="true"] .wbm-group-switch-track {
+  background: var(--wbm-success);
+}
+
+#wbm-root .wbm-group-switch[aria-checked="true"] .wbm-group-switch-knob {
+  transform: translateX(18px);
+}
+
+#wbm-root .wbm-group-switch[aria-checked="mixed"] .wbm-group-switch-track {
+  background: var(--wbm-accent);
+}
+
+#wbm-root .wbm-group-switch[aria-checked="mixed"] .wbm-group-switch-knob {
+  transform: translateX(9px);
+}
+
+#wbm-root .wbm-entry-group-toggle:focus-visible,
+#wbm-root .wbm-group-switch:focus-visible {
+  outline: 2px solid var(--wbm-accent);
+  outline-offset: 2px;
+  border-radius: 8px;
 }
 
 #wbm-root .wbm-rule-warning {
